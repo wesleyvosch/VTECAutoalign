@@ -1,4 +1,5 @@
 % this is the main entry point
+% branches were edited
 function plotall() % plot data
     % gather data
     x=getappdata(0,'x_data');
