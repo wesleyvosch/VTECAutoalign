@@ -1,3 +1,4 @@
+% this is the main entry point
 function plotall() % plot data
     % gather data
     x=getappdata(0,'x_data');
