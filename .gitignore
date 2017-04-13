@@ -25,6 +25,12 @@
 *.la
 *.a
 *.lib
+*.dep
+**/*.dep
+*.mexw64
+*.mlpkginstall
+*.autosave
+*.asv
 
 # Executables
 *.exe
@@ -32,14 +38,18 @@
 *.app
 
 # logs
-*.xls
-*.xlsx
-*.csv
-*.doc
-*.docx
+**/*.xls
+**/*.xlsx
+**/*.csv
+**/*.doc
+**/*.docx
 
 # compiled
 *.elf
 *.eep
 *.hex
 
+# directories
+.SimulinkProject
+Autoalign_system_ert_rtw
+slprj

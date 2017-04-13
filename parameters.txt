@@ -1,0 +1,28 @@
+Parameters (from GUI)
+------------------------------------------------------------------
+on		= main switch, 1=ON & 0=OFF
+start_x		= starting location for X direction
+start_y		= starting location for Y direction
+length_x	= the total length for X direction
+length_y	= the total length for Y direction
+loops		= number of loops the circuit needs to perform
+read_delay	= number of samples between 2 power measurements
+
+
+global variables:
+------------------------------------------------------------------
+--- Storage Variables ---
+stored_X	= last known X position
+stored_Y	= last known Y position
+stored_P	= last known power reading
+
+--- Position ---
+stepcnt		= The current step number
+loopcnt		= The current loop number
+stepcnt_loop	= number of steps required in the current loop
+
+--- Reading ---
+read		= Indicator to start reading power
+read_time	= current number of samples, compared to a constant value
+read_rdy	= indicator for when read-block is finished
+read_cnt	= counter before next read meaurement
