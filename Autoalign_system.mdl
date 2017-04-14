@@ -6,7 +6,7 @@ Model {
     NumRootInports	    0
     NumRootOutports	    0
     ParameterArgumentNames  ""
-    ComputedModelVersion    "1.94"
+    ComputedModelVersion    "1.96"
     NumModelReferences	    0
     NumTestPointedSignals   0
     NumProvidedFunctions    0
@@ -51,7 +51,7 @@ Model {
       $ObjectID		      3
       $ClassName	      "Simulink.WindowInfo"
       IsActive		      [1]
-      Location		      [49.0, 55.0, 1060.0, 617.0]
+      Location		      [936.0, 20.0, 618.0, 617.0]
       Object {
 	$PropName		"ModelBrowserInfo"
 	$ObjectID		4
@@ -78,16 +78,16 @@ Model {
 	  LoadSaveID		  "139"
 	  Extents		  [1920.0, 1080.0]
 	  ZoomFactor		  [1.4999999999999998]
-	  Offset		  [-295.42285714285947, 263.56190476190835]
+	  Offset		  [-295.42285714285958, 263.56190476190835]
 	}
 	Object {
 	  $ObjectID		  7
 	  IsActive		  [1]
 	  ViewObjType		  "SimulinkTopLevel"
 	  LoadSaveID		  "0"
-	  Extents		  [1266.0, 554.0]
-	  ZoomFactor		  [1.0]
-	  Offset		  [-316.70095238095507, -57.359588913062964]
+	  Extents		  [714.0, 554.0]
+	  ZoomFactor		  [0.99999999999999989]
+	  Offset		  [-161.43428571428683, 103.5737444202706]
 	}
 	PropName		"EditorsInfo"
       }
@@ -109,11 +109,11 @@ Model {
       "AAAAAAA+wAAABYARABvAGMAawBXAGkAZABnAGUAdAA0AAAAAAD/////AAAAAAAAAAD7AAAAUgBHAEwAVQBFADIAIAB0AHIAZQBlACAAYwBvAG0Ac"
       "ABvAG4AZQBuAHQALwBHAEwAVQBFADIAIAB0AHIAZQBlACAAYwBvAG0AcABvAG4AZQBuAHQAAAAAAP////8AAAB0AP///wAAAAEAAAF3AAADhPwCA"
       "AAAAfsAAABUAEcATABVAEUAMgA6AFAAcgBvAHAAZQByAHQAeQBJAG4AcwBwAGUAYwB0AG8AcgAvAFAAcgBvAHAAZQByAHQAeQAgAEkAbgBzAHAAZ"
-      "QBjAHQAbwByAAAAAEsAAAOEAAAAMAD///8AAAUbAAACbwAAAAEAAAACAAAAAQAAAAL8AAAAAQAAAAIAAAAP/////wAAAAAA/////wAAAAAAAAAA/"
+      "QBjAHQAbwByAAAAAEsAAAOEAAAAMAD///8AAALzAAACbwAAAAEAAAACAAAAAQAAAAL8AAAAAQAAAAIAAAAP/////wAAAAAA/////wAAAAAAAAAA/"
       "////wEAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/"
       "////wEAAACR/////wAAAAAAAAAA/////wEAAAEE/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wEAAAGV/////wAAAAAAAAAA/"
-      "////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wEAAAPG/////wAAAAAAAAAA/"
-      "////wEAAAP+/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA"
+      "////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wEAAAKD/////wAAAAAAAAAA/"
+      "////wEAAAK7/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA"
     }
   }
   Created		  "Mon Apr 03 11:39:27 2017"
@@ -122,9 +122,9 @@ Model {
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "Gebruiker"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Thu Apr 13 16:46:14 2017"
-  RTWModifiedTimeStamp	  414002419
-  ModelVersionFormat	  "1.%<AutoIncrement:94>"
+  LastModifiedDate	  "Fri Apr 14 13:55:43 2017"
+  RTWModifiedTimeStamp	  414078885
+  ModelVersionFormat	  "1.%<AutoIncrement:96>"
   ConfigurationManager	  "none"
   SampleTimeColors	  off
   SampleTimeAnnotations	  off
@@ -157,7 +157,7 @@ Model {
   BrowserShowLibraryLinks off
   FunctionConnectors	  off
   BrowserLookUnderMasks	  off
-  SimulationMode	  "normal"
+  SimulationMode	  "external"
   PauseTimes		  "5"
   NumberOfSteps		  1
   SnapshotBufferSize	  10
@@ -915,7 +915,7 @@ Model {
 		    MATStruct {
 		    IPAddress		    "codertarget.arduinobase.registry.getLoopbackIP;"
 		    Port		    "17725"
-		    Verbose		    [0.0]
+		    Verbose		    [0]
 		    }
 		    PropName		    "Serial"
 		  }
@@ -1187,6 +1187,24 @@ Model {
       SampleTime	      "-1"
     }
     Block {
+      BlockType		      Delay
+      DelayLengthSource	      "Dialog"
+      DelayLength	      "2"
+      DelayLengthUpperLimit   "100"
+      InitialConditionSource  "Dialog"
+      InitialCondition	      "0.0"
+      ExternalReset	      "None"
+      ShowEnablePort	      off
+      PreventDirectFeedthrough off
+      DiagnosticForDelayLength "None"
+      RemoveDelayLengthCheckInGeneratedCode off
+      InputProcessing	      "Elements as channels (sample based)"
+      UseCircularBuffer	      off
+      SampleTime	      "-1"
+      StateMustResolveToSignalObject off
+      CodeGenStateStorageClass "Auto"
+    }
+    Block {
       BlockType		      Demux
       Outputs		      "4"
       DisplayOption	      "none"
@@ -1319,7 +1337,7 @@ Model {
   }
   System {
     Name		    "Autoalign_system"
-    Location		    [49, 55, 1109, 672]
+    Location		    [936, 20, 1554, 637]
     Open		    on
     ModelBrowserVisibility  off
     ModelBrowserWidth	    200
@@ -1333,7 +1351,16 @@ Model {
     ShowPageBoundaries	    off
     ZoomFactor		    "100"
     ReportName		    "simulink-default.rpt"
-    SIDHighWatermark	    "359"
+    SIDHighWatermark	    "360"
+    Block {
+      BlockType		      Delay
+      Name		      "Delay"
+      SID		      "360"
+      Ports		      [1, 1]
+      Position		      [410, 348, 445, 382]
+      ZOrder		      87
+      InputPortMap	      "u0"
+    }
     Block {
       BlockType		      DigitalClock
       Name		      "Digital Clock"
@@ -2279,7 +2306,7 @@ Model {
       BlockType		      Stop
       Name		      "Stop Simulation"
       SID		      "94"
-      Position		      [455, 347, 490, 383]
+      Position		      [475, 347, 510, 383]
       ZOrder		      27
     }
     Block {
@@ -3263,7 +3290,7 @@ Model {
       SID		      "356"
       Position		      [145, 195, 175, 225]
       ZOrder		      86
-      Value		      "40"
+      Value		      "400"
     }
     Block {
       BlockType		      DataStoreMemory
@@ -3379,13 +3406,6 @@ Model {
       DstPort		      8
     }
     Line {
-      ZOrder		      18
-      SrcBlock		      "MAIN control"
-      SrcPort		      3
-      DstBlock		      "Stop Simulation"
-      DstPort		      1
-    }
-    Line {
       ZOrder		      29
       SrcBlock		      "Read"
       SrcPort		      1
@@ -3498,6 +3518,20 @@ Model {
       SrcPort		      1
       DstBlock		      "MAIN control"
       DstPort		      4
+    }
+    Line {
+      ZOrder		      186
+      SrcBlock		      "MAIN control"
+      SrcPort		      3
+      DstBlock		      "Delay"
+      DstPort		      1
+    }
+    Line {
+      ZOrder		      187
+      SrcBlock		      "Delay"
+      SrcPort		      1
+      DstBlock		      "Stop Simulation"
+      DstPort		      1
     }
     Annotation {
       SID		      "153"
@@ -3780,6 +3814,9 @@ Stateflow {
     screen		    [1 1 3600 1200 1.180555555555556]
     treeNode		    [0 12 0 0]
     viewObj		    11
+    visible		    1
+    subviewS {
+    }
     ssIdHighWaterMark	    25
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
@@ -3824,8 +3861,9 @@ Stateflow {
       "ber of steps is reached, new loop started\n                move=0;\n                stepcnt=0;\n                "
       "loopcnt=loopcnt+1;\n                stepcnt_loop=loopcnt*(lengthx+lengthy)/(2*loops);\n                finish=0;"
       "\n            end\n        else\n            % number of loops is reached, simulation will stop\n            mov"
-      "e=0;\n            stepcnt=0;\n            finish=1;\n        end\n    end\nelse\n    % system is disabled, simul"
-      "ation will stop\n    move=0;\n    read=0;\n    finish=1;\nend"
+      "e=0;\n            stepcnt=0;\n            finish=1;\n        end\n    end\nelseif on==2\n    % system is paused,"
+      " simulation can continue any time\n    move=0;\n    read=0;\n    finish=0;\nelse\n    % system is turned off, si"
+      "mulation will stop\n    move=0;\n    read=0;\n    finish=1;\nend"
       editorLayout	      "100 M4x1[10 5 700 500]"
     }
   }

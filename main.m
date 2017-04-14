@@ -33,15 +33,15 @@ lengthx_str=num2str(lengthx);
 lengthy_str=num2str(lengthy);
 loops_str=num2str(loops);
 delay_str=num2str(delay);
-        
+
 switch state
     case 0 % Stop
         if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
-            % Forced stop
+            % Forced stop            
             set_param('Autoalign_system','SimulationCommand','stop');
         else
             % Normal stop
-            set_param(on_obj{1},'Value','0');
+            set_param(on_obj{1},'Value','0'); % put simulink in off state
         end
     case 1 % Build
         % update values
@@ -51,15 +51,13 @@ switch state
         set_param(lengthy_obj{1},'Value',lengthy_str);
         set_param(loops_obj{1},'Value',loops_str);
         set_param(delay_obj{1},'Value',delay_str);
-        set_param(on_obj{1},'Value','1');
+        set_param(on_obj{1},'Value','1'); % put simulink in run state
         % start building simulink
-        display('start command...');
         set_param('Autoalign_system','SimulationCommand','start');
-        display('...start command');
     case 2 % run
-        set_param(on_obj{1},'Value','1');
+        set_param(on_obj{1},'Value','1'); % put simulink in run state
     case 3 % Pause 
-        set_param(on_obj{1},'Value','1');
+        set_param(on_obj{1},'Value','2'); % put simulink in pause state
         set_param('Autoalign_system','SimulationCommand','pause');
     case 4 % Unpause
         % compare appdata with current data
@@ -67,24 +65,18 @@ switch state
                 &&isequal(lengthx_sim,lengthx_str)&&isequal(lengthy_sim,lengthy_str)...
                 &&isequal(loops_sim,loops_str)&&isequal(delay_sim,delay_str)
             % no changes
-            display('nothing changed');
             changes=0;
-            set_param(on_obj{1},'Value','1');
+            set_param(on_obj{1},'Value','1'); % put simulink in run state
             set_param('Autoalign_system','SimulationCommand','continue');
         else
             changes=1;
-%             state=1;
-%             action='build';
-            display('changes occured');
         end
     otherwise
-        set_param(on_obj{1},'Value','0');
-%         set_param('Autoalign_system','SimulationCommand','stop');
+        set_param(on_obj{1},'Value','0'); % put simulink in off state
 end
 
 cnt=0;
 if state==1 % skip 'while' in build mode
-    display('build');
     action='build';
     return;
 end
@@ -93,23 +85,23 @@ while (strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')==0)
        % Simulink is paused
        display(changes);
        if state>0%&&changes==0 % set state = pause, except for stop or changes
-           state=3;
-           display('simulink is paused and state isn''t stop >> ignore');
            if changes==1
                set_param('Autoalign_system','SimulationCommand','stop');
+           else
+               state=3;
+               break;
            end
        end
-       break;
     end
     if cnt>1200
         % time limit reached (2 minutes)
         break;
     end
     % Simuling is running
+%     time=get_param('Autoalign_system','SimulationTime');
     cnt=cnt+1;
     pause(0.1);
 end
-display('end while');
 if cnt>1200
     % timeout
     action='time';
@@ -122,22 +114,17 @@ switch state
         action='stopped';
     case 1% build
         changes=0;
-        display('build state');
         return;
     case 2% run
         changes=0;
-        display('finish state');
         action='finished';
     case 3% pause
         changes=0;
-        display('paused');
         action='paused';
     case 4% unpause
         if changes==0
-            display('unpause state');
             action='finished';
         else
-            display('rebuild state');
             action='build';
         end
     otherwise % unknown

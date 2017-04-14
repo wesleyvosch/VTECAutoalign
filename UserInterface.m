@@ -105,8 +105,8 @@ state_on=1;
 
 % prepare Simulink
 load_system('Autoalign_system.mdl');
-% set_param('Autoalign_system','SimulationMode','external');
-set_param('Autoalign_system','SimulationMode','normal'); % TEMP settings
+set_param('Autoalign_system','SimulationMode','external');
+% set_param('Autoalign_system','SimulationMode','normal'); % TEMP settings
 
 % plot location layout
 title(handles.plt_pos,'Location matrix');
@@ -160,9 +160,8 @@ switch state_on
         [result,changes]=main(0);
         state_on=1;
     case 1 % Building
-        display('state=building');
-        set(handles.btn_on,'Enable','off');
         set(handles.btn_on,'String','Wait...');
+        set(handles.btn_on,'Enable','inactive');
         % load parameters (string)
         startx_str=get(handles.val_startx,'String');
         starty_str=get(handles.val_starty,'String');
@@ -242,7 +241,6 @@ switch state_on
             state_on=1;
             return; % stop simulation
         end
-        display('data OK');
         % save data to appdata
         setappdata(0,'startx',startx);
         setappdata(0,'starty',starty);
@@ -263,23 +261,22 @@ switch state_on
         set(handles.ind_status,'ForegroundColor',[0 0.67 0.33]);
         state_on=3;
         [result,changes]=main(2);
+%         state_on=1;
     case 3 % Pause
-        display('state=pausing');
         set(handles.ind_status,'String','PAUSE');
         set(handles.ind_status,'ForegroundColor',[0.33 0.67 0]);
         [result,changes]=main(3);
         state_on=4;
     case 4 % Unpause
-        display('state=unpausing');
         set(handles.btn_on,'String','Pause');
         set(handles.btn_on,'Enable','on');
-        set(handles.ind_status,'String','UNPAUSE');
-        set(handles.ind_status,'ForegroundColor',[0.33 0.67 0]);
+        set(handles.ind_status,'String','RUN');
+        set(handles.ind_status,'ForegroundColor',[0 0.67 0.33]);
         state_on=3;
         [result,changes]=main(4);
         if changes==1 % changes occured, re-building
             state_on=1;
-            [result,changes1]=main(1);
+            [result,changes]=main(1);
         end
     otherwise
         % make input boxes white
@@ -294,7 +291,8 @@ switch state_on
 end
 switch result
     case 'build'
-        display('result=build');
+        set(handles.btn_on,'String','Pause');
+        set(handles.btn_on,'Enable','on');
         state_on=2;
         btn_on_Callback(hObject,eventdata,handles);
         return;
@@ -315,7 +313,6 @@ switch result
         set(handles.txt_err,'Visible','on');
         moveon=0;
     case 'paused'
-        display('result=paused');
         set(handles.btn_on,'Enable','on');
         set(handles.btn_on,'String','Unpause');
         set(handles.val_startx,'Enable','on');
@@ -329,7 +326,6 @@ switch result
         set(handles.ind_status,'Foregroundcolor',[0.33 0.67 0]);
         moveon=1;
     case 'resumed'
-        display('result=resumed');
         % end of resume
         set(handles.btn_on,'String','Run');
         set(handles.btn_on,'Enable','on');
@@ -344,7 +340,6 @@ switch result
         set(handles.ind_status,'Foregroundcolor',[0 0 0]);%black
         moveon=1;
     case 'finished'
-        display('result=finished');
         set(handles.btn_on,'String','Run');
         set(handles.btn_on,'Enable','on');
         set(handles.val_startx,'Enable','on');
@@ -368,7 +363,6 @@ switch result
         set(handles.txt_err,'Visible','on');
         moveon=0;
     otherwise
-        display('result=error');
         set(handles.btn_on,'String','Run');
         set(handles.btn_on,'Enable','on');
         set(handles.btn_export,'Enable','off');
@@ -395,6 +389,7 @@ if moveon==1
         set(handles.txt_err,'Visible','on');
         return;
     end
+    set(handles.btn_export,'Enable','on');
     % extract data
     err_sizexy=0;
     err_sizept=0;
@@ -439,9 +434,7 @@ if moveon==1
     else
         % plot power
         plot(handles.plt_pow,t,p);
-%         axis(handles.plt_pow,[tmin tmax pmin pmax]);
     end
-    set(handles.btn_export,'Visible','on');
     % find highest power location
     if skip==1 % skip rest of calculations
         return;
@@ -483,6 +476,11 @@ end
 [f,fname,fext]=fileparts(filename);
 m=[t,x,y,p];
 header={'Time','X-value','Y-value','Power'};
+% | Time | X-val | Y-val | Pow |
+% |------+-------+-------+-----|
+% |    0 |  400  |  400  |   0 |
+% |    1 |  400  |  300  |  50 |
+% |    2 |  ...  |  ...  | ... |
 switch filter
     case 1 % *.xlsx
         full=fullfile(pathname,[fname,'.xlsx']);
@@ -519,7 +517,6 @@ function btn_stop_Callback(hObject, eventdata, handles)
 global state_on;
 set(handles.ind_status,'String','STOPPING');
 set(handles.ind_status,'ForegroundColor',[0.5 0.5 0.5]);
-% set(handles.btn_stop,'Enable','off');
 if strcmp(get_param('Autoalign_system','SimulationStatus'),'building')
     set(handles.txt_err,'String','Simulation is in building mode, please wait until building is finished. The simulaton will stop when possible.');
 end
@@ -642,7 +639,7 @@ function val_time_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of val_time as text
 %        str2double(get(hObject,'String')) returns contents of val_time as a double
-
+set(hObject,'String','on');
 function val_sample_Callback(hObject, eventdata, handles)
 % hObject    handle to val_sample (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
