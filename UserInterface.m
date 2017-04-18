@@ -88,35 +88,43 @@ set(handles.val_lengthy,'backgroundColor','white');
 set(handles.val_loops,'backgroundColor','white');
 set(handles.val_delay,'backgroundColor','white');
 
+set(handles.val_startx,'String','0');
+set(handles.val_starty,'String','0');
+set(handles.val_lengthx,'String','50');
+set(handles.val_lengthy,'String','50');
+set(handles.val_loops,'String','3');
+set(handles.val_delay,'String','16');
+set(handles.val_acc,'String','5');
+
+% set DEFAULT DATA
+setappdata(0,'startx',0);
+setappdata(0,'starty',0);
+setappdata(0,'lengthx',50);
+setappdata(0,'lengthy',50);
+setappdata(0,'loops',3);
+setappdata(0,'delay',16);
+state_on=1;
+
 % init TEXTS
 set(handles.txt_err,'Visible','off');
 set(handles.ind_sim,'String','OFF');
 set(handles.ind_status,'String','IDLE');
 set(handles.ind_status,'Foregroundcolor','black');
 
-% DEFAULT DATA
-setappdata(0,'startx',400);
-setappdata(0,'starty',400);
-setappdata(0,'lengthx',1000);
-setappdata(0,'lengthy',1000);
-setappdata(0,'loops',5);
-setappdata(0,'delay',16);
-state_on=1;
-
-% prepare Simulink
+% prepare SIMULINK
 load_system('Autoalign_system.mdl');
-set_param('Autoalign_system','SimulationMode','external');
-% set_param('Autoalign_system','SimulationMode','normal'); % TEMP settings
+% set_param('Autoalign_system','SimulationMode','external');
+set_param('Autoalign_system','SimulationMode','normal'); % TEMP settings
 
-% plot location layout
+% PLOT location layout
 title(handles.plt_pos,'Location matrix');
-axis(handles.plt_pos,[-100 1100 -100 1100]);
+axis(handles.plt_pos,[-25 25 -25 25]);
 grid(handles.plt_pos,'on');
 grid(handles.plt_pos,'minor');
 xlabel(handles.plt_pos,'X [um]');
 ylabel(handles.plt_pos,'Y [um]');
 
-% plot power layout
+% PLOT power layout
 title(handles.plt_pow,'Power readings');
 axis(handles.plt_pow,[0 15 0 3]);
 grid(handles.plt_pow,'on');
@@ -142,7 +150,7 @@ function btn_on_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 % state=str2double(get(hObject,'Value'));
 global state_on;
-% disable all
+% DISABLE ALL BTN'S
 set(handles.btn_on,'Enable','off');
 set(handles.btn_export,'Enable','off');
 set(handles.val_startx,'Enable','off');
@@ -203,7 +211,7 @@ switch state_on
             errorind=1;
         end
         if errorind==0 % no errors for input
-            limit=floor(lengthx+lengthy)/(4*loops)-floor((lengthx+lengthy)/(4*loops));
+            limit=floor(lengthx+lengthy)/(4*loops-2)-floor((lengthx+lengthy)/(4*loops-2));
             if limit ~= 0 % error in minimum length
                 set(handles.val_lengthx,'BackgroundColor',[0.93 0.69 0.13]);% orange
                 set(handles.val_lengthy,'BackgroundColor',[0.93 0.69 0.13]);% orange
@@ -261,7 +269,6 @@ switch state_on
         set(handles.ind_status,'ForegroundColor',[0 0.67 0.33]);
         state_on=3;
         [result,changes]=main(2);
-%         state_on=1;
     case 3 % Pause
         set(handles.ind_status,'String','PAUSE');
         set(handles.ind_status,'ForegroundColor',[0.33 0.67 0]);
@@ -326,7 +333,6 @@ switch result
         set(handles.ind_status,'Foregroundcolor',[0.33 0.67 0]);
         moveon=1;
     case 'resumed'
-        % end of resume
         set(handles.btn_on,'String','Run');
         set(handles.btn_on,'Enable','on');
         set(handles.val_startx,'Enable','on');
@@ -415,7 +421,7 @@ if moveon==1
         skip=1;
     else
         % plot position
-        factor=100/4098;
+        factor=50/4096; % 50um/4096 steps, theoretical accuracy (excl. hysteresis)
         xpos=xdev.*factor;
         x(:,1)=xpos(:,1)+startx;
         ypos=ydev.*factor;
@@ -465,6 +471,10 @@ if ~isappdata(0,'x_data')||~isappdata(0,'y_data')||~isappdata(0,'p_data')...
     set(handles.txt_err,'Visible','on');
     return;
 end
+t=getappdata(0,'clk');
+x=getappdata(0,'x_data');
+y=getappdata(0,'y_data');
+p=getappdata(0,'p_data');
 
 [filename,pathname,filter]=uiputfile({'*.xlsx','Excel-Workbook';'*.csv','CSV (Comma-Seperated Value)';'*.*','All Files'},'Export data','Alignment Data.xlsx');
 if isequal(filename,0)||isequal(pathname,0)
@@ -569,6 +579,10 @@ val=get(hObject,'String');
 check=str2double(val);
 if ~isnan(check)
     setappdata(0,'lengthx',check); % Update value in appdata
+    leny=getappdata(0,'lengthy');
+    loops=getappdata(0,'loops');
+    acc=(val+leny)/(8*loops-4);
+    set(handles.val_acc,'String',num2str(acc));
     set(hObject,'backgroundColor',[.5 .5 .5]);% grey
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white
@@ -585,6 +599,10 @@ val=get(hObject,'String');
 check=str2double(val);
 if ~isnan(check)
     setappdata(0,'lengthy',check); % Update value in appdata
+    lenx=getappdata(0,'lengthx');
+    loops=getappdata(0,'loops');
+    acc=(lenx+val)/(8*loops-4);
+    set(handles.val_acc,'String',num2str(acc));
     set(hObject,'backgroundColor',[.5 .5 .5]);% grey
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white
@@ -601,6 +619,10 @@ val=get(hObject,'String');
 check=str2double(val);
 if ~isnan(check)
     setappdata(0,'loops',check); % Update value in appdata
+    lenx=getappdata(0,'lengthx');
+    leny=getappdata(0,'lengthy');
+    acc=(lenx+leny)/(8*val-4);
+    set(handles.val_acc,'String',num2str(acc));
     set(hObject,'backgroundColor',[.5 .5 .5]);% grey
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white

@@ -83,7 +83,6 @@ end
 while (strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')==0)
     if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
        % Simulink is paused
-       display(changes);
        if state>0%&&changes==0 % set state = pause, except for stop or changes
            if changes==1
                set_param('Autoalign_system','SimulationCommand','stop');
@@ -107,7 +106,6 @@ if cnt>1200
     action='time';
     return;
 end
-display(state);
 switch state
     case 0 % stop
         changes=0;
