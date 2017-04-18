@@ -2,35 +2,31 @@ function [action,changes]=main(state)
 
 % get input values from Simulink
 changes=0;
-startx_obj=find_system('Autoalign_system','BlockType','Constant','Name','start_x');
-starty_obj=find_system('Autoalign_system','BlockType','Constant','Name','start_y');
-lengthx_obj=find_system('Autoalign_system','BlockType','Constant','Name','length_x');
-lengthy_obj=find_system('Autoalign_system','BlockType','Constant','Name','length_y');
+centerx_obj=find_system('Autoalign_system','BlockType','Constant','Name','center_x');
+centery_obj=find_system('Autoalign_system','BlockType','Constant','Name','center_y');
+diameter_obj=find_system('Autoalign_system','BlockType','Constant','Name','diameter');
 loops_obj=find_system('Autoalign_system','BlockType','Constant','Name','loops');
 delay_obj=find_system('Autoalign_system','BlockType','Constant','Name','stepsize');
 on_obj=find_system('Autoalign_system','BlockType','Constant','Name','on');
 
 % load sim_inputs
-startx_sim=get_param(startx_obj{1},'Value');
-starty_sim=get_param(starty_obj{1},'Value');
-lengthx_sim=get_param(lengthx_obj{1},'Value');
-lengthy_sim=get_param(lengthy_obj{1},'Value');
+centerx_sim=get_param(centerx_obj{1},'Value');
+centery_sim=get_param(centery_obj{1},'Value');
+diameter_sim=get_param(diameter_obj{1},'Value');
 loops_sim=get_param(loops_obj{1},'Value');
 delay_sim=get_param(delay_obj{1},'Value');
 
 % get locally saved data
-startx=getappdata(0,'startx');
-starty=getappdata(0,'starty');
-lengthx=getappdata(0,'lengthx');
-lengthy=getappdata(0,'lengthy');
+centerx=getappdata(0,'centerx');
+centery=getappdata(0,'centery');
+diameter=getappdata(0,'diameter');
 loops=getappdata(0,'loops');
 delay=getappdata(0,'delay');
 
 % transform appdata to string
-startx_str=num2str(startx);
-starty_str=num2str(starty);
-lengthx_str=num2str(lengthx);
-lengthy_str=num2str(lengthy);
+centerx_str=num2str(centerx);
+centery_str=num2str(centery);
+diameter_str=num2str(diameter);
 loops_str=num2str(loops);
 delay_str=num2str(delay);
 
@@ -45,10 +41,9 @@ switch state
         end
     case 1 % Build
         % update values
-        set_param(startx_obj{1},'Value',startx_str);
-        set_param(starty_obj{1},'Value',starty_str);
-        set_param(lengthx_obj{1},'Value',lengthx_str);
-        set_param(lengthy_obj{1},'Value',lengthy_str);
+        set_param(centerx_obj{1},'Value',centerx_str);
+        set_param(centery_obj{1},'Value',centery_str);
+        set_param(diameter_obj{1},'Value',diameter_str);
         set_param(loops_obj{1},'Value',loops_str);
         set_param(delay_obj{1},'Value',delay_str);
         set_param(on_obj{1},'Value','1'); % put simulink in run state
@@ -61,9 +56,8 @@ switch state
         set_param('Autoalign_system','SimulationCommand','pause');
     case 4 % Unpause
         % compare appdata with current data
-        if isequal(startx_sim,startx_str)&&isequal(starty_sim,starty_str)...
-                &&isequal(lengthx_sim,lengthx_str)&&isequal(lengthy_sim,lengthy_str)...
-                &&isequal(loops_sim,loops_str)&&isequal(delay_sim,delay_str)
+        if isequal(centerx_sim,centerx_str)&&isequal(centery_sim,centery_str)...
+                &&isequal(diameter_sim,diameter_str)&&isequal(loops_sim,loops_str)&&isequal(delay_sim,delay_str)
             % no changes
             changes=0;
             set_param(on_obj{1},'Value','1'); % put simulink in run state
