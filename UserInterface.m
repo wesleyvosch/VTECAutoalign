@@ -64,6 +64,44 @@ global state_on;
 
 %% %% %% %% %% INITIALIZATION %% %% %% %% %%
 
+% clear: DATA
+if isappdata(0,'x_data')
+    rmappdata(0,'x_data');
+end
+if isappdata(0,'y_data')
+    rmappdata(0,'y_data');
+end
+if isappdata(0,'p_data')
+    rmappdata(0,'p_data');
+end
+if isappdata(0,'clk')
+    rmappdata(0,'clk');
+end
+if isappdata(0,'x_pos')
+    rmappdata(0,'x_pos');
+end
+if isappdata(0,'y_pos')
+    rmappdata(0,'y_pos');
+end
+if isappdata(0,'centerx')
+    rmappdata(0,'centerx');
+end
+if isappdata(0,'centery')
+    rmappdata(0,'centery');
+end
+if isappdata(0,'diameter')
+    rmappdata(0,'diameter');
+end
+if isappdata(0,'loops')
+    rmappdata(0,'loops');
+end
+if isappdata(0,'delay')
+    rmappdata(0,'delay');
+end
+if isappdata(0,'Pmax_time')
+    rmappdata(0,'Pmax_time');
+end
+
 % set text: IND
 set(handles.ind_sim,'String','OFF');
 set(handles.ind_status,'String','IDLE');
@@ -114,8 +152,8 @@ set(handles.ind_status,'Foregroundcolor','black');
 
 % load: SIMULINK
 load_system('Autoalign_system.mdl');
-% set_param('Autoalign_system','SimulationMode','external');
-set_param('Autoalign_system','SimulationMode','normal'); % TEMP settings
+set_param('Autoalign_system','SimulationMode','external');
+% set_param('Autoalign_system','SimulationMode','normal'); % TEMP settings
 
 % plot: location
 title(handles.plt_pos,'Location matrix');
@@ -170,6 +208,8 @@ switch state_on
         [result,changes]=main(0);
         state_on=1;
     case 1 % do: BUILD
+%         plot(handles.plt_pos,0,0);
+%         plot(handles.plt_pow,0,0);
         set(handles.btn_on,'String','Wait...');
         set(handles.btn_on,'Enable','inactive');
         set(handles.ind_sim,'String','ON');
@@ -331,19 +371,19 @@ if moveon==1 % if data acquisition succesfull
         % transform steps to position
         factor=50/4096; % 50um/4096 steps, theoretical accuracy (excl. hysteresis)
         xpos=xdev.*factor;
-        x(:,1)=xpos(:,1)+(centerx-diameter/(4*loops-2));
+        xnew(:,1)=xpos(:,1)+(centerx-diameter/(4*loops-2));
         ypos=ydev.*factor;
-        y(:,1)=ypos(:,1)+(centery-diameter/(4*loops-2));
+        ynew(:,1)=ypos(:,1)+(centery-diameter/(4*loops-2));
         % plot location
-        set(handles.val_min,'String',num2str(min(x)));
-        set(handles.val_max,'String',num2str(max(x)));
-        setappdata(0,'x_pos',x);
-        setappdata(0,'y_pos',y);
+        set(handles.val_min,'String',num2str(min(xnew)));
+        set(handles.val_max,'String',num2str(max(xnew)));
+        setappdata(0,'x_pos',xnew);
+        setappdata(0,'y_pos',ynew);
         xmin=centerx-diameter/2-(diameter/(4*loops-2));
         xmax=centerx+diameter/2+(diameter/(4*loops-2));
         ymin=centery-diameter/2-(diameter/(4*loops-2));
         ymax=centery+diameter/2+(diameter/(4*loops-2));
-        plot(handles.plt_pos,x,y);
+        plot(handles.plt_pos,xnew,ynew);
         axis(handles.plt_pos,[xmin xmax ymin ymax]);
         grid(handles.plt_pos,'on');
         grid(handles.plt_pos,'minor');
@@ -363,9 +403,10 @@ if moveon==1 % if data acquisition succesfull
     end
     Pmax=max(p);
     index=find(Pmax==p,1);
-    x_index=x(index,1);
-    y_index=y(index,1);
+    x_index=xnew(index,1);
+    y_index=ynew(index,1);
     t_index=t(index,1);
+    plot(handles.plt_pos,x_index,y_index,'ro');
     setappdata(0,'Pmax_time',t_index);
     % display result
     set(handles.val_phigh,'String',num2str(Pmax));
@@ -465,7 +506,7 @@ check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'i')||contains(val,'j')...
         ||isempty(val)||isnan(check)||check>10000||check<-10000
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.txt_err,'String','Input for center X is invalid! Make sure it is a real number between -10.000,0 and 10.000,0');
+    set(handles.txt_err,'String','Input for "Center X" is invalid! Make sure it is a real number between -10.000,0 and 10.000,0');
     set(handles.txt_err,'Visible','on');
 else
     setappdata(0,'centerx',check); % Update value in appdata
@@ -486,7 +527,7 @@ check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'i')||contains(val,'j')...
         ||isempty(val)||isnan(check)||check>10000||check<-10000
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.txt_err,'String','Input for center Y is invalid! Make sure it is a real number between -10.000,0 and 10.000,0');
+    set(handles.txt_err,'String','Input for "Center Y" is invalid! Make sure it is a real number between -10.000,0 and 10.000,0');
     set(handles.txt_err,'Visible','on');
 else
     setappdata(0,'centery',check); % Update value in appdata
@@ -507,7 +548,7 @@ check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'i')||contains(val,'j')...
         ||contains(val,'-')||isempty(val)||isnan(check)||check>10000||check<1
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.txt_err,'String','Input for Diameter is invalid! Make sure it is a real number between 1,0 and 10.000,0');
+    set(handles.txt_err,'String','Input for "Diameter" is invalid! Make sure it is a real number between 1,0 and 10.000,0');
     set(handles.txt_err,'Visible','on');
 else
     setappdata(0,'diameter',check); % Update value in appdata
@@ -528,7 +569,7 @@ check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
         ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>50||check<1
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.txt_err,'String','Input for Loops is invalid! Make sure it is a real, natural number between 1 and 50');
+    set(handles.txt_err,'String','Input for "Loops" is invalid! Make sure it is a real, natural number between 1 and 50');
     set(handles.txt_err,'Visible','on');
 else
     setappdata(0,'loops',check); % Update value in appdata
@@ -549,7 +590,7 @@ check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
         ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>50||check<1
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.txt_err,'String','Input for Delay is invalid! Make sure it is a real, natural number between 1 and 50');
+    set(handles.txt_err,'String','Input for "Delay" is invalid! Make sure it is a real, natural number between 1 and 50');
     set(handles.txt_err,'Visible','on');
 else
     setappdata(0,'delay',check); % Update value in appdata
