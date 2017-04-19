@@ -346,6 +346,8 @@ if moveon==1 % if data acquisition succesfull
         set(handles.txt_err,'Visible','on');
         return;
     end
+    set(handles.ind_sim,'String','BUSY');
+    set(handles.ind_sim,'ForegroundColor',[0.5 0 0]); % red
     set(handles.btn_export,'Enable','on');
     % extract data
     xdev=getappdata(0,'x_data');
@@ -397,7 +399,8 @@ if moveon==1 % if data acquisition succesfull
         plot(handles.plt_pow,t,p);
         grid(handles.plt_pow,'on');
     end
-    
+    set(handles.ind_sim,'String','OFF');
+    set(handles.ind_sim,'ForegroundColor',[0 0 0]); % black
     if skip==1 % proceed to determine highest power?
         return;
     end
@@ -406,7 +409,7 @@ if moveon==1 % if data acquisition succesfull
     x_index=xnew(index,1);
     y_index=ynew(index,1);
     t_index=t(index,1);
-    plot(handles.plt_pos,x_index,y_index,'ro');
+%     plot(handles.plt_pos,x_index,y_index,'rx');
     setappdata(0,'Pmax_time',t_index);
     % display result
     set(handles.val_phigh,'String',num2str(Pmax));
@@ -429,12 +432,17 @@ if ~isappdata(0,'x_pos')||~isappdata(0,'y_pos')||~isappdata(0,'p_data')...
     set(handles.txt_err,'Visible','on');
     return;
 end
-t=getappdata(0,'clk');
-x=getappdata(0,'x_pos');
-y=getappdata(0,'y_pos');
-p=getappdata(0,'p_data');
+set(handles.ind_sim,'String','BUSY');
+set(handles.ind_sim,'ForegroundColor',[0.5 0 0]); % red
+Time=getappdata(0,'clk');
+X_value=getappdata(0,'x_pos');
+Y_value=getappdata(0,'y_pos');
+Power=getappdata(0,'p_data');
 
-[filename,pathname,filter]=uiputfile({'*.xlsx','Excel-Workbook';'*.csv','CSV (Comma-Seperated Value)';'*.*','All Files'},'Export data','Alignment Data.xlsx');
+[filename,pathname,filter]=uiputfile({'*.xlsx','Excel-Workbook';...
+    '*.csv','CSV (Comma-Seperated Value)';...
+    '*.txt','Text Document';'*.*','All Files'}...
+    ,'Export data','Alignment Data.xlsx');
 if isequal(filename,0)||isequal(pathname,0)
     % check for cancel
     set(handles.txt_err,'String','Export cancelled');
@@ -442,8 +450,9 @@ if isequal(filename,0)||isequal(pathname,0)
     return;
 end
 [f,fname,fext]=fileparts(filename);
-m=[t,x,y,p];
-header={'Time','X-value','Y-value','Power'};
+full=fullfile(pathname,[fname,fext]);
+m=[Time,X_value,Y_value,Power];
+header={'Time', 'X-value', 'Y-value', 'Power'};
 % | Time | X-val | Y-val | Pow |
 % |------+-------+-------+-----|
 % |    0 |  400  |  400  |   0 |
@@ -451,31 +460,36 @@ header={'Time','X-value','Y-value','Power'};
 % |    2 |  ...  |  ...  | ... |
 switch filter
     case 1 % *.xlsx
-        full=fullfile(pathname,[fname,'.xlsx']);
         xlswrite(full,header,'Sheet1','A1');
         xlswrite(full,m,'Sheet1','A2');
-        set(handles.ind_status,'String','To *.xlsx');
     case 2 % *.csv
-        full=fullfile(pathname,[fname,'.csv']);
-        mat=[header;num2cell(m)];
-        csvwrite(full,mat);
-        set(handles.ind_status,'String','To *.csv');
+        mtable=table(Time,X_value,Y_value,Power);
+        writetable(mtable,full,'WriteVariableNames',1);
+    case 3 %*.txt
+        mtable=table(Time,X_value,Y_value,Power);
+        writetable(mtable,full,'WriteVariableNames',1);
     otherwise % *.*
-        if fext=='.xlsx'
-            full=fullfile(pathname,[fname,'.xlsx']);
+        if strcmp(fext,'.xlsx')
+            % correct excel extensions
             xlswrite(full,header,'Sheet1','A1');
             xlswrite(full,m,'Sheet1','A2');
-            set(handles.ind_status,'String','To *.xlsx');
-        elseif fext=='.csv'
-            full=fullfile(pathname,[fname,'.csv']);
-            mat=[header;num2cell(m)];
-            csvwrite(full,mat);
-            set(handles.ind_status,'String','To *.csv');
+        elseif strcmp(fext,'.csv')||strcmp(fext,'.txt')
+            % correct other extension
+            mtable=table(Time,X_value,Y_value,Power);
+            writetable(mtable,full,'WriteVariableNames',1);
         else
-            set(handles.txt_err,'String','Unable to save with current extension');
+            % invalid extension
+            fext='.txt';
+            full=fullfile(pathname,[fname,fext]);
+            mtable=table(Time,X_value,Y_value,Power);
+            writetable(mtable,full,'WriteVariableNames',1);
+            set(handles.txt_err,'String','unknown extension');
             set(handles.txt_err,'Visible','on');
         end
 end
+set(handles.ind_status,'String',strcat('To *',fext));
+set(handles.ind_sim,'String','OFF');
+set(handles.ind_sim,'ForegroundColor',[0 0 0]); % BLACK
 
 % --- Executes on button press in btn_stop.
 function btn_stop_Callback(hObject, eventdata, handles)

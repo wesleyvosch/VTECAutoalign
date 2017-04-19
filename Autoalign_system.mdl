@@ -6,7 +6,7 @@ Model {
     NumRootInports	    0
     NumRootOutports	    0
     ParameterArgumentNames  ""
-    ComputedModelVersion    "1.103"
+    ComputedModelVersion    "1.107"
     NumModelReferences	    0
     NumTestPointedSignals   0
     NumProvidedFunctions    0
@@ -75,7 +75,7 @@ Model {
 	IsActive		[1]
 	ViewObjType		"SimulinkTopLevel"
 	LoadSaveID		"0"
-	Extents			[1879.0, 833.0]
+	Extents			[1879.0, 835.0]
 	ZoomFactor		[1.0]
 	Offset			[-462.52190476190651, -157.09142857142513]
       }
@@ -97,11 +97,11 @@ Model {
       "AAAAAAA+wAAABYARABvAGMAawBXAGkAZABnAGUAdAA0AAAAAAD/////AAAAAAAAAAD7AAAAUgBHAEwAVQBFADIAIAB0AHIAZQBlACAAYwBvAG0Ac"
       "ABvAG4AZQBuAHQALwBHAEwAVQBFADIAIAB0AHIAZQBlACAAYwBvAG0AcABvAG4AZQBuAHQAAAAAAP////8AAAB0AP///wAAAAEAAAF3AAADhPwCA"
       "AAAAfsAAABUAEcATABVAEUAMgA6AFAAcgBvAHAAZQByAHQAeQBJAG4AcwBwAGUAYwB0AG8AcgAvAFAAcgBvAHAAZQByAHQAeQAgAEkAbgBzAHAAZ"
-      "QBjAHQAbwByAAAAAEsAAAOEAAAALQD///8AAAeAAAADhgAAAAEAAAACAAAAAQAAAAL8AAAAAQAAAAIAAAAP/////wAAAAAA/////wAAAAAAAAAA/"
+      "QBjAHQAbwByAAAAAEsAAAOEAAAAMAD///8AAAeAAAADhAAAAAEAAAACAAAAAQAAAAL8AAAAAQAAAAIAAAAP/////wAAAAAA/////wAAAAAAAAAA/"
       "////wEAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/"
       "////wEAAACR/////wAAAAAAAAAA/////wEAAAEE/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wEAAAGV/////wAAAAAAAAAA/"
-      "////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wEAAAOh/////wAAAAAAAAAA/"
-      "////wEAAAPZ/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA"
+      "////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wEAAANX/////wAAAAAAAAAA/"
+      "////wEAAAOP/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA"
     }
   }
   Created		  "Mon Apr 03 11:39:27 2017"
@@ -110,9 +110,9 @@ Model {
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "Gebruiker"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Tue Apr 18 16:06:41 2017"
-  RTWModifiedTimeStamp	  414431804
-  ModelVersionFormat	  "1.%<AutoIncrement:103>"
+  LastModifiedDate	  "Wed Apr 19 12:05:12 2017"
+  RTWModifiedTimeStamp	  414502613
+  ModelVersionFormat	  "1.%<AutoIncrement:107>"
   ConfigurationManager	  "none"
   SampleTimeColors	  off
   SampleTimeAnnotations	  off
@@ -145,7 +145,7 @@ Model {
   BrowserShowLibraryLinks off
   FunctionConnectors	  off
   BrowserLookUnderMasks	  off
-  SimulationMode	  "normal"
+  SimulationMode	  "external"
   PauseTimes		  "5"
   NumberOfSteps		  1
   SnapshotBufferSize	  10
@@ -903,7 +903,7 @@ Model {
 		    MATStruct {
 		    IPAddress		    "codertarget.arduinobase.registry.getLoopbackIP;"
 		    Port		    "17725"
-		    Verbose		    [0]
+		    Verbose		    [1]
 		    }
 		    PropName		    "Serial"
 		  }
@@ -2341,20 +2341,20 @@ Model {
       ScopeSpecificationString "Simulink.scopes.TimeScopeBlockCfg('CurrentConfiguration', extmgr.ConfigurationSet(extm"
       "gr.Configuration('Core','General UI',true),extmgr.Configuration('Core','Source UI',true),extmgr.Configuration('S"
       "ources','WiredSimulink',true),extmgr.Configuration('Visuals','Time Domain',true,'SerializedDisplays',{struct('Mi"
-      "nYLimReal','-274.75','MaxYLimReal','322.75','YLabelReal','','MinYLimMag',' 0.00000','MaxYLimMag','322.75','Legen"
-      "dVisibility','off','XGrid',true,'YGrid',true,'PlotMagPhase',false,'AxesColor',[0 0 0],'AxesTickColor',[0.6862745"
-      "09803922 0.686274509803922 0.686274509803922],'ColorOrder',[1 1 0.0666666666666667;0.0745098039215686 0.62352941"
-      "1764706 1;1 0.411764705882353 0.16078431372549;0.392156862745098 0.831372549019608 0.0745098039215686;0.71764705"
-      "8823529 0.274509803921569 1;0.0588235294117647 1 1;1 0.0745098039215686 0.650980392156863],'Title','%<SignalLabe"
-      "l>','LinePropertiesCache',{{}},'UserDefinedChannelNames',{{}},'NumLines',2,'LineNames',{{'X','Y'}},'ShowContent'"
-      ",true,'Placement',1)},'DisplayPropertyDefaults',struct('MinYLimReal','-274.75','MaxYLimReal','322.75','YLabelRea"
-      "l','','MinYLimMag',' 0.00000','MaxYLimMag','322.75','LegendVisibility','off','XGrid',true,'YGrid',true,'PlotMagP"
-      "hase',false,'AxesColor',[0 0 0],'AxesTickColor',[0.686274509803922 0.686274509803922 0.686274509803922],'ColorOr"
-      "der',[0.0745098039215686 0.623529411764706 1;1 0.411764705882353 0.16078431372549;1 1 0.0666666666666667;0.71764"
-      "7058823529 0.274509803921569 1;0.392156862745098 0.831372549019608 0.0745098039215686;0.0588235294117647 1 1;1 0"
-      ".0745098039215686 0.650980392156863])),extmgr.Configuration('Tools','Plot Navigation',true,'PreviousAutoscale','"
-      "XY'),extmgr.Configuration('Tools','Measurements',true,'Version','2016b')),'Version','2016b','Position',[117 232."
-      "2 560 420])"
+      "nYLimReal','-2451.125','MaxYLimReal','2930.125','YLabelReal','','MinYLimMag','  0.00000','MaxYLimMag','2930.125'"
+      ",'LegendVisibility','off','XGrid',true,'YGrid',true,'PlotMagPhase',false,'AxesColor',[0 0 0],'AxesTickColor',[0."
+      "686274509803922 0.686274509803922 0.686274509803922],'ColorOrder',[1 1 0.0666666666666667;0.0745098039215686 0.6"
+      "23529411764706 1;1 0.411764705882353 0.16078431372549;0.392156862745098 0.831372549019608 0.0745098039215686;0.7"
+      "17647058823529 0.274509803921569 1;0.0588235294117647 1 1;1 0.0745098039215686 0.650980392156863],'Title','%<Sig"
+      "nalLabel>','LinePropertiesCache',{{}},'UserDefinedChannelNames',{{}},'NumLines',2,'LineNames',{{'X','Y'}},'ShowC"
+      "ontent',true,'Placement',1)},'DisplayPropertyDefaults',struct('MinYLimReal','-2451.125','MaxYLimReal','2930.125'"
+      ",'YLabelReal','','MinYLimMag','  0.00000','MaxYLimMag','2930.125','LegendVisibility','off','XGrid',true,'YGrid',"
+      "true,'PlotMagPhase',false,'AxesColor',[0 0 0],'AxesTickColor',[0.686274509803922 0.686274509803922 0.68627450980"
+      "3922],'ColorOrder',[0.0745098039215686 0.623529411764706 1;1 0.411764705882353 0.16078431372549;1 1 0.0666666666"
+      "666667;0.717647058823529 0.274509803921569 1;0.392156862745098 0.831372549019608 0.0745098039215686;0.0588235294"
+      "117647 1 1;1 0.0745098039215686 0.650980392156863])),extmgr.Configuration('Tools','Plot Navigation',true,'OnceAt"
+      "Stop',false,'PreviousZoomMode','Pan','PreviousAutoscale','XY'),extmgr.Configuration('Tools','Measurements',true,"
+      "'Version','2016b')),'Version','2016b','Position',[1 41 1524.8 748.8])"
       NumInputPorts	      "2"
     }
     Block {
@@ -2407,7 +2407,7 @@ Model {
       "0.831372549019608 0.0745098039215686;0.0588235294117647 1 1;1 0.0745098039215686 0.650980392156863])),extmgr.Con"
       "figuration('Tools','Plot Navigation',true,'OnceAtStop',false,'PreviousZoomMode','ZoomX','PreviousAutoscale','XY'"
       "),extmgr.Configuration('Tools','Measurements',true,'Version','2016b')),'Version','2016b','Position',[997.8 238.6"
-      " 560 420],'VisibleAtModelOpen','on')"
+      " 560 420])"
       NumInputPorts	      "2"
     }
     Block {
@@ -3307,7 +3307,7 @@ Model {
       SID		      "355"
       Position		      [145, 145, 175, 175]
       ZOrder		      85
-      Value		      "0"
+      Value		      "50"
     }
     Block {
       BlockType		      Constant
@@ -3315,7 +3315,7 @@ Model {
       SID		      "356"
       Position		      [145, 195, 175, 225]
       ZOrder		      86
-      Value		      "0"
+      Value		      "600"
     }
     Block {
       BlockType		      Constant
@@ -3331,7 +3331,7 @@ Model {
       SID		      "9"
       Position		      [145, 345, 175, 375]
       ZOrder		      9
-      Value		      "10"
+      Value		      "40"
     }
     Block {
       BlockType		      Display
@@ -3372,7 +3372,7 @@ Model {
       SID		      "7"
       Position		      [145, 245, 175, 275]
       ZOrder		      7
-      Value		      "10"
+      Value		      "5"
     }
     Block {
       BlockType		      Constant
@@ -3479,7 +3479,7 @@ Model {
       SID		      "8"
       Position		      [145, 295, 175, 325]
       ZOrder		      8
-      Value		      "50"
+      Value		      "20"
     }
     Block {
       BlockType		      DataStoreMemory
@@ -3527,7 +3527,6 @@ Model {
       ZOrder		      9
       SrcBlock		      "on"
       SrcPort		      1
-      Points		      [40, 0]
       DstBlock		      "MAIN control"
       DstPort		      2
     }
@@ -3542,7 +3541,6 @@ Model {
       ZOrder		      13
       SrcBlock		      "stepsize"
       SrcPort		      1
-      Points		      [40, 0]
       DstBlock		      "MAIN control"
       DstPort		      6
     }
@@ -3550,7 +3548,6 @@ Model {
       ZOrder		      14
       SrcBlock		      "diameter"
       SrcPort		      1
-      Points		      [40, 0]
       DstBlock		      "MAIN control"
       DstPort		      7
     }
@@ -4058,9 +4055,6 @@ Stateflow {
     screen		    [1 1 3600 1200 1.180555555555556]
     treeNode		    [0 12 0 0]
     viewObj		    11
-    visible		    1
-    subviewS {
-    }
     ssIdHighWaterMark	    26
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
