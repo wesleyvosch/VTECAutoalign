@@ -22,7 +22,7 @@ function varargout = UserInterface(varargin)
 
 % Edit the above text to modify the response to help UserInterface
 
-% Last Modified by GUIDE v2.5 18-Apr-2017 14:10:18
+% Last Modified by GUIDE v2.5 19-Apr-2017 15:04:13
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -98,6 +98,12 @@ end
 if isappdata(0,'delay')
     rmappdata(0,'delay');
 end
+if isappdata(0,'read_time')
+    rmappdata(0,'read_time');
+end
+if isappdata(0,'approx_time')
+    rmappdata(0,'approx_time');
+end
 if isappdata(0,'Pmax_time')
     rmappdata(0,'Pmax_time');
 end
@@ -120,6 +126,7 @@ set(handles.val_centery,'Enable','on');
 set(handles.val_diameter,'Enable','on');
 set(handles.val_loops,'Enable','on');
 set(handles.val_delay,'Enable','on');
+set(handles.val_tRead,'Enable','on');
 
 % set bg: BOXES
 set(handles.val_centerx,'backgroundColor','white');
@@ -127,6 +134,7 @@ set(handles.val_centery,'backgroundColor','white');
 set(handles.val_diameter,'backgroundColor','white');
 set(handles.val_loops,'backgroundColor','white');
 set(handles.val_delay,'backgroundColor','white');
+set(handles.val_tRead,'backgroundColor','white');
 
 % set value: BOXES
 set(handles.val_centerx,'String','0');
@@ -134,7 +142,15 @@ set(handles.val_centery,'String','0');
 set(handles.val_diameter,'String','50');
 set(handles.val_loops,'String','3');
 set(handles.val_delay,'String','16');
-set(handles.val_acc,'String','5');
+set(handles.val_tRead,'String','16');
+
+set(handles.val_acc,'String','...');
+set(handles.val_min,'String','...');
+set(handles.val_max,'String','...');
+set(handles.val_phigh,'String','...');
+set(handles.val_xhigh,'String','...');
+set(handles.val_yhigh,'String','...');
+set(handles.val_thigh,'String','...');
 
 % set value: DATA
 setappdata(0,'centerx',0);
@@ -142,6 +158,7 @@ setappdata(0,'centery',0);
 setappdata(0,'diameter',50);
 setappdata(0,'loops',3);
 setappdata(0,'delay',16);
+setappdata(0,'read_time',16);
 state_on=1;
 
 % set text: IND
@@ -199,7 +216,16 @@ set(handles.val_centery,'Enable','off');
 set(handles.val_diameter,'Enable','off');
 set(handles.val_loops,'Enable','off');
 set(handles.val_delay,'Enable','off');
+set(handles.val_tRead,'Enable','off');
 set(handles.txt_err,'Visible','off');
+
+set(handles.val_acc,'String','...');
+set(handles.val_min,'String','...');
+set(handles.val_max,'String','...');
+set(handles.val_phigh,'String','...');
+set(handles.val_xhigh,'String','...');
+set(handles.val_yhigh,'String','...');
+set(handles.val_thigh,'String','...');
 switch state_on
     case 0 % do: STOP
         % show that stop is in progress
@@ -208,8 +234,8 @@ switch state_on
         [result,changes]=main(0);
         state_on=1;
     case 1 % do: BUILD
-%         plot(handles.plt_pos,0,0);
-%         plot(handles.plt_pow,0,0);
+        cla(handles.plt_pos);
+        cla(handles.plt_pow);
         set(handles.btn_on,'String','Wait...');
         set(handles.btn_on,'Enable','inactive');
         set(handles.ind_sim,'String','ON');
@@ -218,6 +244,8 @@ switch state_on
         state_on=2;
         [result,changes]=main(1);
     case 2 % do: RUN
+        time=getappdata(0,'approx_time');
+        set(handles.val_time,'String',num2str(ceil(time)));
         set(handles.btn_on,'String','Pause');
         set(handles.btn_on,'Enable','on');
         set(handles.ind_status,'String','RUN');
@@ -246,6 +274,7 @@ switch state_on
         set(handles.val_diameter,'BackgroundColor','white');
         set(handles.val_loops,'BackgroundColor','white');
         set(handles.val_delay,'BackgroundColor','white');
+        set(handles.val_tRead,'BackgroundColor','white');
         [result,changes]=main(0);
         state_on=1;
 end
@@ -265,6 +294,7 @@ switch result
         set(handles.val_diameter,'Enable','on');
         set(handles.val_loops,'Enable','on');
         set(handles.val_delay,'Enable','on');
+        set(handles.val_tRead,'Enable','on');
         set(handles.ind_sim,'String','OFF');
         set(handles.ind_status,'String','IDLE');
         set(handles.ind_status,'Foregroundcolor',[0 0 0]);%black
@@ -279,6 +309,7 @@ switch result
         set(handles.val_diameter,'Enable','on');
         set(handles.val_loops,'Enable','on');
         set(handles.val_delay,'Enable','on');
+        set(handles.val_tRead,'Enable','on');
         set(handles.ind_sim,'String','ON');
         set(handles.ind_status,'String','PAUSED');
         set(handles.ind_status,'Foregroundcolor',[0.33 0.67 0]);
@@ -291,6 +322,7 @@ switch result
         set(handles.val_diameter,'Enable','on');
         set(handles.val_loops,'Enable','on');
         set(handles.val_delay,'Enable','on');
+        set(handles.val_tRead,'Enable','on');
         set(handles.ind_sim,'String','OFF');
         set(handles.ind_status,'String','IDLE');
         set(handles.ind_status,'Foregroundcolor',[0 0 0]);%black
@@ -304,6 +336,7 @@ switch result
         set(handles.val_diameter,'Enable','on');
         set(handles.val_loops,'Enable','on');
         set(handles.val_delay,'Enable','on');
+        set(handles.val_tRead,'Enable','on');
         set(handles.ind_sim,'String','OFF');
         set(handles.ind_status,'String','IDLE');
         set(handles.ind_status,'Foregroundcolor',[0 0 0]);%black
@@ -327,6 +360,7 @@ switch result
         set(handles.val_diameter,'Enable','on');
         set(handles.val_loops,'Enable','on');
         set(handles.val_delay,'Enable','on');
+        set(handles.val_tRead,'Enable','on');
         set(handles.ind_sim,'String','OFF');
         set(handles.ind_status,'String','IDLE');
         set(handles.ind_status,'Foregroundcolor',[0 0 0]);%black
@@ -358,6 +392,8 @@ if moveon==1 % if data acquisition succesfull
     centery=getappdata(0,'centery');
     diameter=getappdata(0,'diameter');
     loops=getappdata(0,'loops');
+    acc=diameter/(2*loops-1);
+    set(handles.val_acc,'String',acc);
     if ~isequal(size(xdev),size(ydev))
         err_sizexy=1;
     end
@@ -409,7 +445,7 @@ if moveon==1 % if data acquisition succesfull
     x_index=xnew(index,1);
     y_index=ynew(index,1);
     t_index=t(index,1);
-%     plot(handles.plt_pos,x_index,y_index,'rx');
+    plot(handles.plt_pos,xnew,ynew,x_index,y_index,'rx');
     setappdata(0,'Pmax_time',t_index);
     % display result
     set(handles.val_phigh,'String',num2str(Pmax));
@@ -613,6 +649,27 @@ else
     set(hObject,'backgroundColor',[1 1 1]);% white
 end
 
+function val_tRead_Callback(hObject, eventdata, handles)
+% hObject    handle to val_tRead (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of val_tRead as text
+%        str2double(get(hObject,'String')) returns contents of val_tRead as a double
+val=get(hObject,'String');
+check=str2double(val);
+if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
+        ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>50||check<1
+    set(hObject,'BackgroundColor',[1 0 0]);% red
+    set(handles.txt_err,'String','Input for "Read time" is invalid! Make sure it is a real, natural number between 1 and 50');
+    set(handles.txt_err,'Visible','on');
+else
+    setappdata(0,'read_time',check); % Update value in appdata
+    set(hObject,'backgroundColor',[0 .5 0]);% green
+    pause(.05);
+    set(hObject,'backgroundColor',[1 1 1]);% white
+end
+
 %%%%%%%%%%%%%%%%% SHOWING VALUES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function val_acc_Callback(hObject, eventdata, handles)
@@ -630,14 +687,14 @@ function val_time_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of val_time as text
 %        str2double(get(hObject,'String')) returns contents of val_time as a double
-set(hObject,'String','on');
+
 function val_sample_Callback(hObject, eventdata, handles)
-% hObject    handle to val_sample (see GCBO)
+% hObject    handle to val_time (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of val_sample as text
-%        str2double(get(hObject,'String')) returns contents of val_sample as a double
+% Hints: get(hObject,'String') returns contents of val_time as text
+%        str2double(get(hObject,'String')) returns contents of val_time as a double
 
 function val_min_Callback(hObject, eventdata, handles)
 % hObject    handle to val_min (see GCBO)
@@ -723,6 +780,17 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 % --- Executes during object creation, after setting all properties.
+function val_loops_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to val_loops (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+% --- Executes during object creation, after setting all properties.
 function val_delay_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to val_delay (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -734,8 +802,8 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 % --- Executes during object creation, after setting all properties.
-function val_loops_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to val_loops (see GCBO)
+function val_tRead_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to val_tRead (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -768,7 +836,7 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 % --- Executes during object creation, after setting all properties.
 function val_sample_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to val_sample (see GCBO)
+% hObject    handle to val_time (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
