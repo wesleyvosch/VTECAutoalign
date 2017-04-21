@@ -170,9 +170,12 @@ set(handles.ind_status,'Foregroundcolor','black');
 % load: SIMULINK
 load_system('Autoalign_system.mdl');
 set_param('Autoalign_system','SimulationMode','external');
+% set_param('Autoalign_system','SimulationCommand','connect');
 % set_param('Autoalign_system','SimulationMode','normal'); % TEMP settings
 
 % plot: location
+% yyaxis(handles.plt_pos,'left');
+cla(handles.plt_pos);
 title(handles.plt_pos,'Location matrix');
 axis(handles.plt_pos,[-30 30 -30 30]);
 grid(handles.plt_pos,'on');
@@ -180,12 +183,19 @@ grid(handles.plt_pos,'minor');
 xlabel(handles.plt_pos,'X [um]');
 ylabel(handles.plt_pos,'Y [um]');
 
-% plot: time
-title(handles.plt_pow,'Power readings');
-axis(handles.plt_pow,[0 15 0 3]);
+% plot: data in t-domain
+yyaxis(handles.plt_pow,'left');
+cla(handles.plt_pow);
+title(handles.plt_pow,'Data in time domain');
+xlabel(handles.plt_pow,'time [seconds]');
 grid(handles.plt_pow,'on');
-xlabel(handles.plt_pow,'time [sec]');
+axis(handles.plt_pow,[0 15 0 3]);
 ylabel(handles.plt_pow,'Power [uW]');
+yyaxis(handles.plt_pow,'right');
+cla(handles.plt_pow);
+axis(handles.plt_pow,[0 15 -30 30]);
+ylabel(handles.plt_pow,'position [um]');
+
 
 %% %% %% %% %% MAIN FUNCTION %% %% %% %% %%
 
@@ -235,17 +245,21 @@ switch state_on
         state_on=1;
     case 1 % do: BUILD
         cla(handles.plt_pos);
+%         yyaxis(handles.plt_pos,'left');
         cla(handles.plt_pow);
+%         yyaxis(handles.plt_pos,'right');
+%         cla(handles.plt_pow);
         set(handles.btn_on,'String','Wait...');
-        set(handles.btn_on,'Enable','inactive');
+        set(handles.btn_on,'Enable','off');
         set(handles.ind_sim,'String','ON');
         set(handles.ind_status,'String','BUILD');
         set(handles.ind_status,'ForegroundColor',[0 0.33 0.67]);
+        set_param('Autoalign_system','SimulationCommand','connect');
         state_on=2;
         [result,changes]=main(1);
     case 2 % do: RUN
         time=getappdata(0,'approx_time');
-        set(handles.val_time,'String',num2str(ceil(time)));
+        set(handles.val_time,'String',num2str(ceil(time/60)));
         set(handles.btn_on,'String','Pause');
         set(handles.btn_on,'Enable','on');
         set(handles.ind_status,'String','RUN');
@@ -421,6 +435,7 @@ if moveon==1 % if data acquisition succesfull
         xmax=centerx+diameter/2+(diameter/(4*loops-2));
         ymin=centery-diameter/2-(diameter/(4*loops-2));
         ymax=centery+diameter/2+(diameter/(4*loops-2));
+%         yyaxis(handles.plt_pos,'left');
         plot(handles.plt_pos,xnew,ynew);
         axis(handles.plt_pos,[xmin xmax ymin ymax]);
         grid(handles.plt_pos,'on');
@@ -431,27 +446,63 @@ if moveon==1 % if data acquisition succesfull
         set(handles.txt_err,'Visible','on');
         skip=1;
     else
-        % plot power
+        x=getappdata(0,'x_pos');
+        y=getappdata(0,'y_pos');
+        xmin=centerx-diameter/2-(diameter/(4*loops-2));
+        xmax=centerx+diameter/2+(diameter/(4*loops-2));
+        ymin=centery-diameter/2-(diameter/(4*loops-2));
+        ymax=centery+diameter/2+(diameter/(4*loops-2));
+        secmin=min(xmin,ymin);
+        secmax=max(xmax,ymax);
+        tmin=0;
+        tmax=max(t);
+        pmin=0;
+        pmax=max(p);
+        xlim(handles.plt_pos,[0 tmax]);
+        grid(handles.plt_pos,'on');
+        grid(handles.plt_pos,'minor');
+        legend(handles.plt_pos,'Power','X position','Y position')
+        % plot P(t) (left)
+        yyaxis(handles.plt_pow,'left');
         plot(handles.plt_pow,t,p);
-        grid(handles.plt_pow,'on');
+        ylim(handles.plt_pow,[pmin pmax]);
+%         axis(handles.plt_pos,[tmin tmax pmin pmax]);
+        % plot X(t) & Y(t)
+        yyaxis(handles.plt_pow,'right');
+        plot(handles.plt_pow,t,x,t,y);
+        ylim(handles.plt_pow,[secmin secmax]);
     end
     set(handles.ind_sim,'String','OFF');
     set(handles.ind_sim,'ForegroundColor',[0 0 0]); % black
     if skip==1 % proceed to determine highest power?
         return;
     end
-    Pmax=max(p);
-    index=find(Pmax==p,1);
-    x_index=xnew(index,1);
-    y_index=ynew(index,1);
-    t_index=t(index,1);
-    plot(handles.plt_pos,xnew,ynew,x_index,y_index,'rx');
-    setappdata(0,'Pmax_time',t_index);
-    % display result
-    set(handles.val_phigh,'String',num2str(Pmax));
-    set(handles.val_xhigh,'String',num2str(x_index));
-    set(handles.val_yhigh,'String',num2str(y_index));
-    set(handles.val_thigh,'String',num2str(t_index));
+    if max(p)>2
+        max_p=0;
+    else
+        max_p=max(p);
+    end
+    highmin=max_p*0.9;
+    highmax=max_p;
+    row=find(p>highmin & p<highmax);
+    for i=1:size(row)
+       xi(i,1)=xnew(row(i,1),1);
+       yi(i,1)=ynew(row(i,1),1);
+       ti(i,1)=t(row(i,1),1);
+%        plot(handles.plt_pos,xnew,ynew,xi(i,1),yi(i,1),'r');
+    end
+%     yyaxis(handles.plt_pos,'left');
+    setappdata(0,'xnew',xi);
+    setappdata(0,'ynew',yi);
+    plot(handles.plt_pos,xnew,ynew,xi,yi,'r');
+    phigh_txt=strcat(num2str(floor(highmin)),' |  ',num2str(floor(highmax)));
+    xhigh_txt=strcat(num2str(floor(xi(1))),' |  ',num2str(floor(xi(numel(row)))));
+    yhigh_txt=strcat(num2str(floor(yi(1))),' |  ',num2str(floor(yi(numel(row)))));
+    thigh_txt=strcat(num2str(floor(ti(1))),' |  ',num2str(floor(ti(numel(row)))));
+    set(handles.val_phigh,'String',phigh_txt);
+    set(handles.val_xhigh,'String',xhigh_txt);
+    set(handles.val_yhigh,'String',yhigh_txt);
+    set(handles.val_thigh,'String',thigh_txt);
 end
 
 % --- Executes on button press in btn_export.

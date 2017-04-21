@@ -6,7 +6,7 @@ Model {
     NumRootInports	    0
     NumRootOutports	    0
     ParameterArgumentNames  ""
-    ComputedModelVersion    "1.111"
+    ComputedModelVersion    "1.116"
     NumModelReferences	    0
     NumTestPointedSignals   0
     NumProvidedFunctions    0
@@ -110,9 +110,9 @@ Model {
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "Gebruiker"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Wed Apr 19 15:27:18 2017"
-  RTWModifiedTimeStamp	  414516429
-  ModelVersionFormat	  "1.%<AutoIncrement:111>"
+  LastModifiedDate	  "Fri Apr 21 08:04:35 2017"
+  RTWModifiedTimeStamp	  414662167
+  ModelVersionFormat	  "1.%<AutoIncrement:116>"
   ConfigurationManager	  "none"
   SampleTimeColors	  off
   SampleTimeAnnotations	  off
@@ -903,7 +903,7 @@ Model {
 		    MATStruct {
 		    IPAddress		    "codertarget.arduinobase.registry.getLoopbackIP;"
 		    Port		    "17725"
-		    Verbose		    [0.0]
+		    Verbose		    [1]
 		    }
 		    PropName		    "Serial"
 		  }
@@ -3263,7 +3263,7 @@ Model {
       SID		      "8"
       Position		      [145, 360, 175, 390]
       ZOrder		      8
-      Value		      "16"
+      Value		      "50"
     }
     Block {
       BlockType		      Constant
@@ -3302,7 +3302,7 @@ Model {
       SID		      "7"
       Position		      [145, 310, 175, 340]
       ZOrder		      7
-      Value		      "3"
+      Value		      "2"
     }
     Block {
       BlockType		      Constant
@@ -3359,7 +3359,6 @@ Model {
       SID		      "376"
       Position		      [145, 160, 175, 190]
       ZOrder		      96
-      Value		      "16"
     }
     Block {
       BlockType		      DataStoreMemory
@@ -3549,10 +3548,6 @@ Model {
       DstPort		      1
     }
     Line {
-      FontName		      "Helvetica"
-      FontSize		      9
-      FontWeight	      "normal"
-      FontAngle		      "normal"
       ZOrder		      168
       SrcBlock		      "X"
       SrcPort		      1
@@ -3667,9 +3662,6 @@ Stateflow {
     screen		    [1 1 3600 1200 1.180555555555556]
     treeNode		    [0 3 0 0]
     viewObj		    2
-    visible		    1
-    subviewS {
-    }
     ssIdHighWaterMark	    9
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
@@ -3871,9 +3863,6 @@ Stateflow {
     screen		    [1 1 3600 1200 1.180555555555556]
     treeNode		    [0 13 0 0]
     viewObj		    12
-    visible		    1
-    subviewS {
-    }
     ssIdHighWaterMark	    28
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
