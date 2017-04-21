@@ -170,31 +170,33 @@ set(handles.ind_status,'Foregroundcolor','black');
 % load: SIMULINK
 load_system('Autoalign_system.mdl');
 set_param('Autoalign_system','SimulationMode','external');
-% set_param('Autoalign_system','SimulationCommand','connect');
 % set_param('Autoalign_system','SimulationMode','normal'); % TEMP settings
 
 % plot: location
 % yyaxis(handles.plt_pos,'left');
-cla(handles.plt_pos);
+cla(handles.plt_pos,'reset');
 title(handles.plt_pos,'Location matrix');
 axis(handles.plt_pos,[-30 30 -30 30]);
 grid(handles.plt_pos,'on');
 grid(handles.plt_pos,'minor');
-xlabel(handles.plt_pos,'X [um]');
-ylabel(handles.plt_pos,'Y [um]');
+xlabel(handles.plt_pos,'X position [um]');
+ylabel(handles.plt_pos,'Y position [um]');
 
 % plot: data in t-domain
-yyaxis(handles.plt_pow,'left');
-cla(handles.plt_pow);
+cla(handles.plt_pow,'reset'); % clear plot
+% Set general settings
 title(handles.plt_pow,'Data in time domain');
+xlim(handles.plt_pow,[0 15]);
 xlabel(handles.plt_pow,'time [seconds]');
+legend(handles.plt_pow,'Power','X position','Y position');
 grid(handles.plt_pow,'on');
-axis(handles.plt_pow,[0 15 0 3]);
+grid(handles.plt_pow,'minor');
+% Set primary settings
+yyaxis(handles.plt_pow,'left');
 ylabel(handles.plt_pow,'Power [uW]');
+% Set secondary settings
 yyaxis(handles.plt_pow,'right');
-cla(handles.plt_pow);
-axis(handles.plt_pow,[0 15 -30 30]);
-ylabel(handles.plt_pow,'position [um]');
+ylabel(handles.plt_pow,'Position [um]');
 
 
 %% %% %% %% %% MAIN FUNCTION %% %% %% %% %%
@@ -229,6 +231,7 @@ set(handles.val_delay,'Enable','off');
 set(handles.val_tRead,'Enable','off');
 set(handles.txt_err,'Visible','off');
 
+set(handles.val_time,'String','...');
 set(handles.val_acc,'String','...');
 set(handles.val_min,'String','...');
 set(handles.val_max,'String','...');
@@ -243,23 +246,20 @@ switch state_on
         set(handles.ind_status,'foregroundColor',[0.5 0 0]);
         [result,changes]=main(0);
         state_on=1;
-    case 1 % do: BUILD
-        cla(handles.plt_pos);
-%         yyaxis(handles.plt_pos,'left');
-        cla(handles.plt_pow);
-%         yyaxis(handles.plt_pos,'right');
-%         cla(handles.plt_pow);
+    case 1 % do: Prepare for BUILD
+        cla(handles.plt_pow,'reset');
+        cla(handles.plt_pos,'reset');
         set(handles.btn_on,'String','Wait...');
         set(handles.btn_on,'Enable','off');
         set(handles.ind_sim,'String','ON');
         set(handles.ind_status,'String','BUILD');
         set(handles.ind_status,'ForegroundColor',[0 0.33 0.67]);
-        set_param('Autoalign_system','SimulationCommand','connect');
         state_on=2;
         [result,changes]=main(1);
-    case 2 % do: RUN
+    case 2 % do: start with RUN
         time=getappdata(0,'approx_time');
-        set(handles.val_time,'String',num2str(ceil(time/60)));
+        time_txt=strcat(num2str(floor(time/60)),'m ',num2str(floor(time-floor(time/60)*60)),'s');
+        set(handles.val_time,'String',time_txt);
         set(handles.btn_on,'String','Pause');
         set(handles.btn_on,'Enable','on');
         set(handles.ind_status,'String','RUN');
@@ -282,6 +282,16 @@ switch state_on
             state_on=1;
             [result,changes]=main(1);
         end
+    case 5 % move to new start position
+        time=getappdata(0,'approx_time');
+        time_txt=strcat(num2str(floor(time/60)),'m ',num2str(floor(time-floor(time/60)*60)),'s');
+        set(handles.val_time,'String',time_txt);
+        set(handles.btn_on,'String','Pause');
+        set(handles.btn_on,'Enable','on');
+        set(handles.ind_status,'String','MOVE');
+        set(handles.ind_status,'ForegroundColor',[0 0.67 0.33]);
+        state_on=3;
+        [result,changes]=main(5);
     otherwise % do: QUIT
         set(handles.val_centerx,'BackgroundColor','white');
         set(handles.val_centery,'BackgroundColor','white');
@@ -296,9 +306,19 @@ switch result
     case 'build' % result: BUILD / RE-BUILD
         set(handles.btn_on,'String','Pause');
         set(handles.btn_on,'Enable','on');
-        state_on=2;
+        if changes==2 % position is changed
+            state_on=5;
+        else
+            state_on=2;
+        end
         btn_on_Callback(hObject,eventdata,handles);
         return;
+    case 'moved' % result: MOVED
+        set(handles.btn_on,'String','Pause');
+        set(handles.btn_on,'Enable','on');
+        state_on=1; % re-run with correct position
+        btn_on_Callback(hObject,eventdata,handles);
+%         return;
     case 'stopped' % result: STOPPED
         set(handles.btn_on,'String','Run');
         set(handles.btn_on,'Enable','on');
@@ -438,6 +458,9 @@ if moveon==1 % if data acquisition succesfull
 %         yyaxis(handles.plt_pos,'left');
         plot(handles.plt_pos,xnew,ynew);
         axis(handles.plt_pos,[xmin xmax ymin ymax]);
+        title(handles.plt_pos,'Location matrix');
+        xlabel(handles.plt_pos,'X position');
+        ylabel(handles.plt_pos,'Y position');
         grid(handles.plt_pos,'on');
         grid(handles.plt_pos,'minor');
     end
@@ -456,21 +479,29 @@ if moveon==1 % if data acquisition succesfull
         secmax=max(xmax,ymax);
         tmin=0;
         tmax=max(t);
-        pmin=0;
-        pmax=max(p);
-        xlim(handles.plt_pos,[0 tmax]);
-        grid(handles.plt_pos,'on');
-        grid(handles.plt_pos,'minor');
-        legend(handles.plt_pos,'Power','X position','Y position')
+        if min(p)==max(p)
+            pmin=0;
+            pmax=1;
+        else
+            pmin=min(p);
+            pmax=max(p);
+        end
+        title(handles.plt_pow,'Data in time domain');
+        xlabel(handles.plt_pow,'Time [seconds]');
         % plot P(t) (left)
         yyaxis(handles.plt_pow,'left');
-        plot(handles.plt_pow,t,p);
+        plot(handles.plt_pow,t,p,'r');
         ylim(handles.plt_pow,[pmin pmax]);
+        ylabel(handles.plt_pow,'Power [uW]');
 %         axis(handles.plt_pos,[tmin tmax pmin pmax]);
         % plot X(t) & Y(t)
         yyaxis(handles.plt_pow,'right');
-        plot(handles.plt_pow,t,x,t,y);
+        plot(handles.plt_pow,t,x,'b',t,y,'m');
         ylim(handles.plt_pow,[secmin secmax]);
+        ylabel(handles.plt_pow,'Position [um]');
+        grid(handles.plt_pow,'on');
+        grid(handles.plt_pow,'minor');
+        legend(handles.plt_pow,'Power','X position','Y position')
     end
     set(handles.ind_sim,'String','OFF');
     set(handles.ind_sim,'ForegroundColor',[0 0 0]); % black
@@ -494,7 +525,12 @@ if moveon==1 % if data acquisition succesfull
 %     yyaxis(handles.plt_pos,'left');
     setappdata(0,'xnew',xi);
     setappdata(0,'ynew',yi);
-    plot(handles.plt_pos,xnew,ynew,xi,yi,'r');
+    plot(handles.plt_pos,xnew,ynew,xi,yi,'r*','markersize',1);
+    title(handles.plt_pos,'Location matrix');
+    xlabel(handles.plt_pos,'X position');
+    ylabel(handles.plt_pos,'Y position');
+    grid(handles.plt_pos,'on');
+    grid(handles.plt_pos,'minor');
     phigh_txt=strcat(num2str(floor(highmin)),' |  ',num2str(floor(highmax)));
     xhigh_txt=strcat(num2str(floor(xi(1))),' |  ',num2str(floor(xi(numel(row)))));
     yhigh_txt=strcat(num2str(floor(yi(1))),' |  ',num2str(floor(yi(numel(row)))));
@@ -689,9 +725,9 @@ function val_delay_Callback(hObject, eventdata, handles)
 val=get(hObject,'String');
 check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
-        ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>50||check<1
+        ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>1000||check<1
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.txt_err,'String','Input for "Delay" is invalid! Make sure it is a real, natural number between 1 and 50');
+    set(handles.txt_err,'String','Input for "Delay" is invalid! Make sure it is a real, natural number between 1 and 1000');
     set(handles.txt_err,'Visible','on');
 else
     setappdata(0,'delay',check); % Update value in appdata
@@ -710,9 +746,9 @@ function val_tRead_Callback(hObject, eventdata, handles)
 val=get(hObject,'String');
 check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
-        ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>50||check<1
+        ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>1000||check<1
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.txt_err,'String','Input for "Read time" is invalid! Make sure it is a real, natural number between 1 and 50');
+    set(handles.txt_err,'String','Input for "Read time" is invalid! Make sure it is a real, natural number between 1 and 1000');
     set(handles.txt_err,'Visible','on');
 else
     setappdata(0,'read_time',check); % Update value in appdata

@@ -1,5 +1,4 @@
 function [action,changes]=main(state)
-
 % get input values from Simulink
 changes=0;
 centerx_obj=find_system('Autoalign_system','BlockType','Constant','Name','center_x');
@@ -11,12 +10,12 @@ read_time_obj=find_system('Autoalign_system','BlockType','Constant','Name','read
 on_obj=find_system('Autoalign_system','BlockType','Constant','Name','on');
 
 % load sim_inputs
-centerx_sim=get_param(centerx_obj{1},'Value');
-centery_sim=get_param(centery_obj{1},'Value');
-diameter_sim=get_param(diameter_obj{1},'Value');
-loops_sim=get_param(loops_obj{1},'Value');
-delay_sim=get_param(delay_obj{1},'Value');
-read_time_sim=get_param(read_time_obj{1},'Value');
+centerx_sim=str2double(get_param(centerx_obj{1},'Value'));
+centery_sim=str2double(get_param(centery_obj{1},'Value'));
+diameter_sim=str2double(get_param(diameter_obj{1},'Value'));
+loops_sim=str2double(get_param(loops_obj{1},'Value'));
+delay_sim=str2double(get_param(delay_obj{1},'Value'));
+read_time_sim=str2double(get_param(read_time_obj{1},'Value'));
 
 % get locally saved data
 centerx=getappdata(0,'centerx');
@@ -38,8 +37,11 @@ ci=0;
 for i=1:loops
    ci=ci+(2*i-1)*diameter*4096/((2*loops-1)*50);
 end
-ct=(4*ci+diameter*4096/((2*loops-1)*50))*(1+16/delay);
-time=ct/800;
+ct=4*ci+diameter*4096/((2*loops-1)*50);
+start_diff=abs(centerx-centerx_sim)+abs(centery-centery_sim);
+cto=ct+start_diff*4096/50;
+time=cto*(1+16/delay)/800;
+
 setappdata(0,'approx_time',time);
 cnt_time=15*time;
 switch state
@@ -52,6 +54,16 @@ switch state
             set_param(on_obj{1},'Value','0'); % put simulink in off state
         end
     case 1 % Build
+        if centerx==centerx_sim && centery == centery_sim
+            % start position unchanged
+            set_param(on_obj{1},'Value','1'); % simulink -> run: search fcn
+            changes=0;
+        else
+            % start position changed
+            set_param(on_obj{1},'Value','3'); % simulink -> run: move fcn
+            changes=2;
+        end
+        
         % update values
         set_param(centerx_obj{1},'Value',centerx_str);
         set_param(centery_obj{1},'Value',centery_str);
@@ -59,9 +71,11 @@ switch state
         set_param(loops_obj{1},'Value',loops_str);
         set_param(delay_obj{1},'Value',delay_str);
         set_param(read_time_obj{1},'Value',read_time_str);
-        set_param(on_obj{1},'Value','1'); % put simulink in run state
+        set_param(on_obj{1},'Value','1'); % simulink -> run: search fcn
         % start building simulink
-        set_param('Autoalign_system','SimulationCommand','start');
+        if strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')
+            set_param('Autoalign_system','SimulationCommand','start');
+        end
     case 2 % run
         set_param(on_obj{1},'Value','1'); % put simulink in run state
     case 3 % Pause 
@@ -79,6 +93,8 @@ switch state
         else
             changes=1;
         end
+    case 5 % move
+        set_param(on_obj{1},'Value','3'); % put simulink in move state
     otherwise
         set_param(on_obj{1},'Value','0'); % put simulink in off state
 end
@@ -91,7 +107,7 @@ end
 while (strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')==0)
     if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
        % Simulink is paused
-       if state>0%&&changes==0 % set state = pause, except for stop or changes
+       if state>0
            if changes==1
                set_param('Autoalign_system','SimulationCommand','stop');
            else
@@ -105,7 +121,6 @@ while (strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')==0)
         break;
     end
     % Simuling is running
-%     time=get_param('Autoalign_system','SimulationTime');
     cnt=cnt+1;
     pause(0.1);
 end
@@ -133,6 +148,8 @@ switch state
         else
             action='build';
         end
+    case 5% moved
+        action='moved';
     otherwise % unknown
         action='stopped';
 end
