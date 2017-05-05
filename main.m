@@ -1,6 +1,23 @@
 function [action,changes]=main(state)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+% This function communicatates between the GUI and the simulink model. It
+% gets the state from the user interface and returns the correct action.
+% For some states is for the GUI important to know if changes are made to
+% the parameters.
+% 
+% PARAMETERS:
+% input: 
+%   state - number between 0 and 5 to select the required state
+% output: 
+%   action - indicator to know which state is finished
+%   changes - inducator to check for changes between saved data and 
+%             kwnown parameters
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+display('MAIN');
 % get input values from Simulink
-changes=0;
+changes=-1;
 centerx_obj=find_system('Autoalign_system','BlockType','Constant','Name','center_x');
 centery_obj=find_system('Autoalign_system','BlockType','Constant','Name','center_y');
 diameter_obj=find_system('Autoalign_system','BlockType','Constant','Name','diameter');
@@ -17,7 +34,7 @@ loops_sim=str2double(get_param(loops_obj{1},'Value'));
 delay_sim=str2double(get_param(delay_obj{1},'Value'));
 read_time_sim=str2double(get_param(read_time_obj{1},'Value'));
 
-% get locally saved data
+% get local data
 centerx=getappdata(0,'centerx');
 centery=getappdata(0,'centery');
 diameter=getappdata(0,'diameter');
@@ -44,24 +61,33 @@ time=cto*(1+16/delay)/800;
 
 setappdata(0,'approx_time',time);
 cnt_time=15*time;
+display(state);
 switch state
+    case -1 % EXIT
+        display('MAIN: exit');
+        set_param(on_obj{1},'Value','-1'); % turn off simulink
     case 0 % Stop
+        set_param(on_obj{1},'Value','0');
         if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
-            % Forced stop            
-            set_param('Autoalign_system','SimulationCommand','stop');
+            % Forced stop
+            display('MAIN: unpause & set to idle');
+            set_param('Autoalign_system','SimulationCommand','continue');
         else
             % Normal stop
-            set_param(on_obj{1},'Value','0'); % put simulink in off state
+            display('MAIN: set to idle');
+%             set_param(on_obj{1},'Value','0'); % put simulink in idle state
         end
     case 1 % Build
         if centerx==centerx_sim && centery == centery_sim
             % start position unchanged
-            set_param(on_obj{1},'Value','1'); % simulink -> run: search fcn
+            display('MAIN: build, search');
+            set_param(on_obj{1},'Value','2'); % simulink -> run: search fcn
             changes=0;
         else
             % start position changed
-            set_param(on_obj{1},'Value','3'); % simulink -> run: move fcn
-            changes=2;
+            display('MAIN: build, move');
+            set_param(on_obj{1},'Value','1'); % simulink -> run: move fcn
+            changes=1;
         end
         
         % update values
@@ -71,85 +97,164 @@ switch state
         set_param(loops_obj{1},'Value',loops_str);
         set_param(delay_obj{1},'Value',delay_str);
         set_param(read_time_obj{1},'Value',read_time_str);
-        set_param(on_obj{1},'Value','1'); % simulink -> run: search fcn
+        set_param(on_obj{1},'Value','0');
         % start building simulink
         if strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')
+            display('MAIN: BUILD, start ');
             set_param('Autoalign_system','SimulationCommand','start');
         end
-    case 2 % run
-        set_param(on_obj{1},'Value','1'); % put simulink in run state
+    case 2 % run (move or search)
+        % update parameters
+        set_param(centerx_obj{1},'Value',centerx_str);
+        set_param(centery_obj{1},'Value',centery_str);
+        set_param(diameter_obj{1},'Value',diameter_str);
+        set_param(loops_obj{1},'Value',loops_str);
+        set_param(delay_obj{1},'Value',delay_str);
+        set_param(read_time_obj{1},'Value',read_time_str);
+        if (centerx==centerx_sim) && (centery == centery_sim)
+            % search mode
+            display('MAIN: run search');
+            set_param(on_obj{1},'Value','2'); % simulink -> run: search fcn
+            if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
+                set_param('Autoalign_system','SimulationCommand','continue');
+            end
+            changes=0;
+        else
+            display('MAIN: run move');
+            % move mode
+            set_param(on_obj{1},'Value','1'); % simulink -> run: move fcn
+            if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
+                set_param('Autoalign_system','SimulationCommand','continue');
+            end
+            changes=1;
+        end
     case 3 % Pause 
-        set_param(on_obj{1},'Value','2'); % put simulink in pause state
+        display('MAIN: pause');
+        set_param(on_obj{1},'Value','3'); % put simulink in pause state
         set_param('Autoalign_system','SimulationCommand','pause');
     case 4 % Unpause
-        % compare appdata with current data
+        % compare parameters with previous data
         if isequal(centerx_sim,centerx_str)&&isequal(centery_sim,centery_str)...
                 &&isequal(diameter_sim,diameter_str)&&isequal(loops_sim,loops_str)...
                 &&isequal(delay_sim,delay_str)&&isequal(read_time_sim,read_time_str)
-            % no changes
+            % nothing changed
+            display('MAIN: resume');
             changes=0;
-            set_param(on_obj{1},'Value','1'); % put simulink in run state
+            set_param(on_obj{1},'Value','2'); % put simulink in run state
             set_param('Autoalign_system','SimulationCommand','continue');
         else
+            display('MAIN: restart');
             changes=1;
         end
-    case 5 % move
-        set_param(on_obj{1},'Value','3'); % put simulink in move state
     otherwise
+        display('MAIN: unknown');
         set_param(on_obj{1},'Value','0'); % put simulink in off state
+        if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
+            set_param('Autoalign_system','SimulationCommand','continue');
+        end
+        return;
 end
 
 cnt=0;
 if state==1 % skip 'while' in build mode
+    display('MAIN: build skip');
     action='build';
     return;
 end
-while (strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')==0)
-    if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
-       % Simulink is paused
-       if state>0
-           if changes==1
-               set_param('Autoalign_system','SimulationCommand','stop');
-           else
-               state=3;
-               break;
-           end
-       end
+% display(get_param('Autoalign_system','SimulationStatus'));
+while strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')==0
+    set_param('Autoalign_system', 'SimulationCommand', 'WriteDataLogs');
+    pause(0.1);
+    temp=getappdata(0,'setpause');
+    if temp>0
+        display('MAIN: break, pause request');
+        break;
     end
-    if cnt>cnt_time
-        % time limit reached (2 minutes)
+%     set_param('Autoalign_system', 'SimulationCommand', 'continue');
+    if state==-1||cnt>cnt_time
+        display('MAIN: break from while...');
         break;
     end
     % Simuling is running
     cnt=cnt+1;
-    pause(0.1);
+%     pause(0.1);
 end
+
+display('MAIN: end while');
+display(cnt);
+display(getappdata(0,'setpause'));
+display(state);
+
 if cnt>cnt_time
-    % timeout
     action='time';
+    changes=0;
     return;
 end
+if getappdata(0,'setpause')~=0
+    display('preform pause request');
+    changes=0;
+    switch getappdata(0,'setpause')
+        case 1
+            action='finished';
+        case 2
+            action='moved';
+        case 3
+            action='paused';
+        otherwise
+            action='stopped';
+    end
+    return;
+end
+
 switch state
+    case -1 % exit
+        display('MAIN: show:exit');
+        changes=0;
+        action='exit';
     case 0 % stop
+        display('MAIN: show:stop');
+        set_param(on_obj{1},'Value','0'); % simulink -> idle
+%         set_param('Autoalign_system','SimulationCommand','start');
         changes=0;
         action='stopped';
     case 1% build
+        display('MAIN: show:build');
+%         set_param(on_obj{1},'Value','0'); % simulink -> idle
+%         set_param('Autoalign_system','SimulationCommand','start');
         changes=0;
+        action='build';
         return;
     case 2% run
-        changes=0;
-        action='finished';
+        if changes==0
+            display('MAIN: show:finish');
+            set_param(on_obj{1},'Value','0'); % simulink -> idle
+%             set_param('Autoalign_system','SimulationCommand','start');
+            action='finished';
+        else
+            display('MAIN: show:move');
+            set_param(on_obj{1},'Value','0'); % simulink -> idle
+%             set_param('Autoalign_system','SimulationCommand','start');
+            action='moved';
+        end
     case 3% pause
+        display('MAIN: show:pause');
         changes=0;
         action='paused';
     case 4% unpause
         if changes==0
+            display('MAIN: show:unpause,finish');
+            set_param(on_obj{1},'Value','0'); % simulink -> idle
+%             set_param('Autoalign_system','SimulationCommand','start');
             action='finished';
         else
+            display('MAIN: show:unpause,build');
+%             set_param(on_obj{1},'Value','0'); % simulink -> idle
+%             set_param('Autoalign_system','SimulationCommand','start');
             action='build';
         end
-    case 5% moved
-        action='moved';
     otherwise % unknown
+        display('MAIN: show:unknown,stop');
+        set_param(on_obj{1},'Value','0'); % simulink -> idle
+%         set_param('Autoalign_system','SimulationCommand','start');
         action='stopped';
 end
