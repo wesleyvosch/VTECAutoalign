@@ -118,6 +118,9 @@ end
 if isappdata(0,'Pmax_time')
     rmappdata(0,'Pmax_time');
 end
+if isappdata(0,'setpause')
+    rmappdata(0,'setpause');
+end
 
 % set values for elements in Settings panel
 set(handles.val_centerx,'String','0');
@@ -285,7 +288,7 @@ switch connected
         display('btn_C: connecting');
 %         set_param('Autoalign_system','HardwareBoard','Arduino Mega 2560');
         set(handles.ind_status,'String','CONNECTING');
-        set(handles.ind_status,'ForegroundColor',[0 0 .5]);
+        set(handles.ind_status,'ForegroundColor',[0 0.69 0.94]);
         % checksum 
         if check_sum==1
             % already build, only connecting required
@@ -296,7 +299,7 @@ switch connected
             display('btn_C: connected');
             set(handles.ind_sim,'String','ON');
             set(handles.ind_status,'String','CONNECTED');
-            set(handles.ind_status,'ForegroundColor',[0 0 0.75]);
+            set(handles.ind_status,'ForegroundColor',[0 0.5 0.5]);
             connected=1;
             state_on=1;
             % enable inputs
@@ -315,7 +318,7 @@ switch connected
             display('start build');
             check_sum=1;
             set(handles.ind_status,'String','BUILDING');
-            set(handles.ind_status,'ForegroundColor',[0 0 1]);
+            set(handles.ind_status,'ForegroundColor',[0 0.44 0.75]);
             [result,changes]=main(1);
             % enable inputs
             set(handles.val_centerx,'Enable','on');
@@ -332,7 +335,7 @@ switch connected
     case 1 % Disconnecting
         display('btn_C: disconnecting');
         set(handles.ind_status,'String','STOPPING');
-        set(handles.ind_status,'foregroundcolor',[1 0.75 0]);
+        set(handles.ind_status,'foregroundcolor',[0 0.44 0.75]);
         state_on=0;
         connected=0;
         [result,changes]=main(0); 
@@ -360,7 +363,7 @@ switch result
         set(handles.val_delay,'Enable','on');
         set(handles.val_tRead,'Enable','on');
         set(handles.ind_status,'String','BUILD');
-        set(handles.ind_status,'ForegroundColor',[.5 0 1]);
+        set(handles.ind_status,'ForegroundColor',[0 0 1]);
         set(handles.btn_on,'Enable','on');
         set(handles.btn_on,'String','Run');
         set(handles.btn_connect,'Enable','on');
@@ -369,10 +372,10 @@ switch result
     case 'stopped'
         display('btn_C: result=stopped');
         set(handles.ind_status,'String','DISCONNECTING');
-        set(handles.ind_status,'foregroundcolor',[.75 0 0.5]);
+        set(handles.ind_status,'foregroundcolor',[0 0.44 0.75]);
         set_param('Autoalign_system','SimulationCommand','Disconnect');
         set(handles.ind_status,'String','DISCONNECTED');
-        set(handles.ind_status,'foregroundcolor',[.75 0 0.25]);
+        set(handles.ind_status,'foregroundcolor',[0 0.5 0.5]);
         connected=0;
         % enable inputs
         set(handles.val_centerx,'Enable','on');
@@ -424,7 +427,7 @@ switch state_on
     case 0 % IDLE mode
         display('btn_O: IDLE');
         set(handles.ind_status,'String','STOPPING');
-        set(handles.ind_status,'foregroundColor',[0.5 0 0]);
+        set(handles.ind_status,'foregroundColor',[1 0 0]);
         state_on=0;
         [result,changes]=main(0);
     case 1 % MOVE mode
@@ -435,24 +438,24 @@ switch state_on
         set(handles.btn_on,'String','Pause');
         set(handles.btn_on,'Enable','on');
         set(handles.ind_status,'String','Moving');
-        set(handles.ind_status,'ForegroundColor',[0 0.75 0.5]);
+        set(handles.ind_status,'ForegroundColor',[0 0.5 0.5]);
         state_on=3;
         [result,changes]=main(2);
     case 2 % SEARCH mode
         display('btn_O: searching');
         time=getappdata(0,'approx_time');
-        time_txt=strcat(num2str(floor(time/60)),'m ',num2str(floor(time-floor(time/60)*60)),'s');
+        time_txt=strcat(num2str(floor(time/60)),'m ',num2str(round(time-floor(time/60)*60)),'s');
         set(handles.val_time,'String',time_txt);
         set(handles.btn_on,'String','Pause');
         set(handles.btn_on,'Enable','on');
         set(handles.ind_status,'String','RUNNING');
-        set(handles.ind_status,'ForegroundColor',[0 0.25 0]);
+        set(handles.ind_status,'ForegroundColor',[0 0.5 0]);
         state_on=3;
         [result,changes]=main(2);
     case 3 % PAUSE simulation
         display('btn_O: pausing');
         set(handles.ind_status,'String','PAUSING');
-        set(handles.ind_status,'ForegroundColor',[0 0.25 0.5]);
+        set(handles.ind_status,'ForegroundColor',[0 0.75 0]);
         state_on=4;
         [result,changes]=main(3);
     case 4 % UNPAUSE simulation
@@ -483,7 +486,7 @@ switch result
         set(handles.btn_export,'Enable','on');
         set(handles.ind_sim,'String','OFF');
         set(handles.ind_status,'String','STOPPED');
-        set(handles.ind_status,'Foregroundcolor',[1 0 0]);
+        set(handles.ind_status,'Foregroundcolor',[0.5 0 0]);
         return;
     case 'finished'
         display('btn_O: result=finished');
@@ -500,31 +503,41 @@ switch result
         set(handles.btn_on,'Enable','on');
         set(handles.btn_connect,'Enable','on');
         set(handles.btn_export,'Enable','on');
-        set(handles.ind_sim,'String','OFF');
+        set(handles.ind_sim,'String','IDLE');
         set(handles.ind_status,'String','FINISHED');
         set(handles.ind_status,'Foregroundcolor',[0 1 0]);
     case 'moved'
         display('btn_O: result=moved');
         set(handles.ind_status,'String','MOVED');
-        set(handles.ind_status,'ForegroundColor',[0 0.75 0.75]);
+        set(handles.ind_status,'ForegroundColor',[0 0.5 0.25]);
         state_on=3;
         return;
     case 'paused'
         display('btn_O: result=paused');
+        set(handles.val_centerx,'Enable','on');
+        set(handles.val_centery,'Enable','on');
+        set(handles.val_diameter,'Enable','on');
+        set(handles.val_loops,'Enable','on');
+        set(handles.val_delay,'Enable','on');
+        set(handles.val_tRead,'Enable','on');
         set(handles.ind_status,'String','PAUSED');
-        set(handles.ind_status,'ForegroundColor',[0 0 0.5]);
-        state_on=5;
+        set(handles.ind_status,'ForegroundColor',[0.93 0.49 0.19]);
+        set(handles.btn_on,'String','Unpause');
+        set(handles.btn_connect,'Enable','on');
+        set(handles.btn_on,'Enable','on');
+        set(handles.btn_export,'Enable','on');
+        state_on=4;
     case 'unpaused'
         display('btn_O: result=unpaused');
         if changes==0 % resume
             display('btn_O: no changes, resuming');
             set(handles.ind_status,'String','RESUMING');
-            set(handles.ind_status,'ForegroundColor',[0 0.25 0.5]);
-            state_on=4;
+            set(handles.ind_status,'ForegroundColor',[0 1 0]);
+            state_on=3;
         else % restart
             display('btn_O: changes, restarting');
             set(handles.ind_status,'String','RESTARTING');
-            set(handles.ind_status,'ForegroundColor',[0 0.25 0.75]);
+            set(handles.ind_status,'ForegroundColor',[0.78 0.35 0.07]);
             state_on=2;
             btn_on_Callback(hObject, eventdata, handles);
         end
@@ -562,7 +575,7 @@ switch result
         set(handles.btn_connect,'Enable','on');
         set(handles.btn_export,'Enable','on');
         set(handles.ind_status,'String','IDLE');
-        set(handles.ind_status,'ForegroundColor',[0 1 0]);
+        set(handles.ind_status,'ForegroundColor',[0.5 0.5 0.5]);
         set(handles.ind_sim,'String','OFF');
         set(handles.ind_sim,'ForegroundColor',[0 0 0]);
         return;
@@ -580,7 +593,7 @@ if ~isappdata(0,'x_data')||~isappdata(0,'y_data')||~isappdata(0,'p_data')...
     return;
 end
 set(handles.ind_status,'String','PLOTTING');
-set(handles.ind_status,'ForegroundColor',[0 0.5 0.5]);
+set(handles.ind_status,'ForegroundColor',[1 1 0]);
 set(handles.btn_export,'Enable','on');
 % extract data
 xdev=getappdata(0,'x_data');
@@ -772,7 +785,7 @@ set(handles.val_Ptmin,'String',num2str(floor(ti(numel(1)))));
 set(handles.val_Ptmax,'String',num2str(floor(ti(numel(row)))));
 
 set(handles.ind_status,'String','IDLE');
-set(handles.ind_status,'ForegroundColor',[0 1 0]);
+set(handles.ind_status,'ForegroundColor',[0.5 0.5 0.5]);
 set(handles.ind_sim,'String','OFF');
 set(handles.ind_sim,'ForegroundColor',[0 0 0]);
 
@@ -790,7 +803,7 @@ if ~isappdata(0,'x_pos')||~isappdata(0,'y_pos')||~isappdata(0,'p_data')...
     return;
 end
 set(handles.ind_sim,'String','BUSY');
-set(handles.ind_sim,'ForegroundColor',[0.5 0 0]); % red
+% set(handles.ind_sim,'ForegroundColor',[0.5 0 0]); % red
 Time=getappdata(0,'clk');
 X_value=getappdata(0,'x_pos');
 Y_value=getappdata(0,'y_pos');
@@ -844,7 +857,7 @@ switch filter
 end
 set(handles.ind_status,'String',strcat('To *',fext));
 set(handles.ind_sim,'String','OFF');
-set(handles.ind_sim,'ForegroundColor',[0 0 0]); % BLACK
+% set(handles.ind_sim,'ForegroundColor',[0 0 0]); % BLACK
 
 % --- Executes on button press in btn_reset.
 function btn_reset_Callback(hObject, eventdata, handles)
@@ -854,7 +867,7 @@ function btn_reset_Callback(hObject, eventdata, handles)
 global state_on;
 display('btn_RESET');
 set(handles.ind_status,'String','RESETTING');
-set(handles.ind_status,'ForegroundColor',[0.5 0.5 0.5]);
+set(handles.ind_status,'ForegroundColor',[0.8 0.5 0]);
 % UserInterface_OpeningFcn(hObject, eventdata, handles, varargin)
 reset=questdlg('Do you really want to reset the interface?!','Reset','Cancel','Reset','Cancel');
 if strcmp(reset,'Cancel')
@@ -872,7 +885,7 @@ function btn_exit_Callback(hObject, eventdata, handles)
 global state_on;
 global check_sum;
 set(handles.ind_status,'String','EXITING');
-set(handles.ind_status,'ForegroundColor',[1 0.5 0.5]);
+set(handles.ind_status,'ForegroundColor',[1 0 0]);
 state_on=-1;
 check_sum=0;
 btn_on_Callback(findobj('Tag','btn_on'),eventdata,handles);
@@ -894,6 +907,9 @@ if contains(val,' ')||contains(val,',')||contains(val,'i')||contains(val,'j')...
     set(handles.ind_error,'String','Invallid value, -10.000 < CenterX < 10.000');
 else
     setappdata(0,'centerx',check); % Update value in appdata
+    time=calcTime();
+    time_txt=strcat(num2str(floor(time/60)),' min, ',num2str(round(time-floor(time/60)*60)),' sec');
+    set(handles.ind_time,'String',num2str(time_txt));
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white
@@ -914,6 +930,9 @@ if contains(val,' ')||contains(val,',')||contains(val,'i')||contains(val,'j')...
     set(handles.ind_error,'String','Invallid value, -10.000 < CenterY < 10.000');
 else
     setappdata(0,'centery',check); % Update value in appdata
+    time=calcTime();
+    time_txt=strcat(num2str(floor(time/60)),' min, ',num2str(round(time-floor(time/60)*60)),' sec');
+    set(handles.ind_time,'String',num2str(time_txt));
     set(hObject,'backgroundColor',[0 .5 0]);% grey
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white
@@ -934,6 +953,9 @@ if contains(val,' ')||contains(val,',')||contains(val,'i')||contains(val,'j')...
     set(handles.ind_error,'String','Invallid value, 1 < Diameter < 10.000');
 else
     setappdata(0,'diameter',check); % Update value in appdata
+    time=calcTime();
+    time_txt=strcat(num2str(floor(time/60)),' min, ',num2str(round(time-floor(time/60)*60)),' sec');
+    set(handles.ind_time,'String',num2str(time_txt));
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white
@@ -954,6 +976,9 @@ if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
     set(handles.ind_error,'String','Invallid value, 1 < Loops < 50');
 else
     setappdata(0,'loops',check); % Update value in appdata
+    time=calcTime();
+    time_txt=strcat(num2str(floor(time/60)),' min, ',num2str(round(time-floor(time/60)*60)),' sec');
+    set(handles.ind_time,'String',num2str(time_txt));
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white
@@ -974,6 +999,9 @@ if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
     set(handles.ind_error,'String','Invallid value, 1 < Delay < 1000');
 else
     setappdata(0,'delay',check); % Update value in appdata
+    time=calcTime();
+    time_txt=strcat(num2str(floor(time/60)),' min, ',num2str(round(time-floor(time/60)*60)),' sec');
+    set(handles.ind_time,'String',num2str(time_txt));
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white

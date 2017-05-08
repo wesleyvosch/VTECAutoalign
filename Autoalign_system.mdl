@@ -6,7 +6,7 @@ Model {
     NumRootInports	    0
     NumRootOutports	    0
     ParameterArgumentNames  ""
-    ComputedModelVersion    "1.165"
+    ComputedModelVersion    "1.174"
     NumModelReferences	    0
     NumTestPointedSignals   0
     NumProvidedFunctions    0
@@ -51,7 +51,7 @@ Model {
       $ObjectID		      3
       $ClassName	      "Simulink.WindowInfo"
       IsActive		      [1]
-      Location		      [-7.0, -7.0, 1550.0, 838.0]
+      Location		      [-6.0, 0.0, 781.0, 830.0]
       Object {
 	$PropName		"ModelBrowserInfo"
 	$ObjectID		4
@@ -75,9 +75,9 @@ Model {
 	IsActive		[1]
 	ViewObjType		"SimulinkTopLevel"
 	LoadSaveID		"0"
-	Extents			[1879.0, 835.0]
-	ZoomFactor		[1.5]
-	Offset			[75.284761904763684, 52.864390525753919]
+	Extents			[917.0, 825.0]
+	ZoomFactor		[1.25]
+	Offset			[578.50190476190619, 170.49867624003923]
       }
       Object {
 	$PropName		"DockComponentsInfo"
@@ -91,17 +91,17 @@ Model {
 	Floating		[0]
 	DockPosition		"Right"
 	Width			[300]
-	Height			[696]
+	Height			[688]
       }
       WindowState	      "AAAA/wAAAAD9AAAAAgAAAAAAAAC9AAAB+PwCAAAAA/sAAAAWAEQAbwBjAGsAVwBpAGQAZwBlAHQAMwEAAAAxAAAB+AAAA"
       "AAAAAAA+wAAABYARABvAGMAawBXAGkAZABnAGUAdAA0AAAAAAD/////AAAAAAAAAAD7AAAAUgBHAEwAVQBFADIAIAB0AHIAZQBlACAAYwBvAG0Ac"
-      "ABvAG4AZQBuAHQALwBHAEwAVQBFADIAIAB0AHIAZQBlACAAYwBvAG0AcABvAG4AZQBuAHQAAAAAAP////8AAAB0AP///wAAAAEAAAF3AAADhPwCA"
+      "ABvAG4AZQBuAHQALwBHAEwAVQBFADIAIAB0AHIAZQBlACAAYwBvAG0AcABvAG4AZQBuAHQAAAAAAP////8AAAB0AP///wAAAAEAAAF3AAADevwCA"
       "AAAAfsAAABUAEcATABVAEUAMgA6AFAAcgBvAHAAZQByAHQAeQBJAG4AcwBwAGUAYwB0AG8AcgAvAFAAcgBvAHAAZQByAHQAeQAgAEkAbgBzAHAAZ"
-      "QBjAHQAbwByAAAAAEsAAAOEAAAAowD///8AAAeAAAADhAAAAAEAAAACAAAAAQAAAAL8AAAAAQAAAAIAAAAP/////wAAAAAA/////wAAAAAAAAAA/"
+      "QBjAHQAbwByAAAAAEsAAAN6AAAAowD///8AAAO+AAADegAAAAEAAAACAAAAAQAAAAL8AAAAAQAAAAIAAAAP/////wAAAAAA/////wAAAAAAAAAA/"
       "////wEAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/"
       "////wEAAACR/////wAAAAAAAAAA/////wEAAAEE/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wEAAAGV/////wAAAAAAAAAA/"
-      "////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wEAAAPG/////wAAAAAAAAAA/"
-      "////wEAAAP+/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA"
+      "////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA/////wEAAANO/////wAAAAAAAAAA/"
+      "////wEAAAOG/////wAAAAAAAAAA/////wAAAAAA/////wAAAAAAAAAA"
     }
   }
   Created		  "Mon Apr 03 11:39:27 2017"
@@ -110,9 +110,9 @@ Model {
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "Gebruiker"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Fri May 05 15:01:07 2017"
-  RTWModifiedTimeStamp	  415897265
-  ModelVersionFormat	  "1.%<AutoIncrement:165>"
+  LastModifiedDate	  "Mon May 08 17:00:35 2017"
+  RTWModifiedTimeStamp	  416162849
+  ModelVersionFormat	  "1.%<AutoIncrement:174>"
   ConfigurationManager	  "none"
   SampleTimeColors	  off
   SampleTimeAnnotations	  off
@@ -145,7 +145,7 @@ Model {
   BrowserShowLibraryLinks off
   FunctionConnectors	  off
   BrowserLookUnderMasks	  off
-  SimulationMode	  "normal"
+  SimulationMode	  "external"
   PauseTimes		  "5"
   NumberOfSteps		  1
   SnapshotBufferSize	  10
@@ -2393,7 +2393,7 @@ Model {
 		    MATStruct {
 		    IPAddress		    "codertarget.arduinobase.registry.getLoopbackIP;"
 		    Port		    "17725"
-		    Verbose		    [0]
+		    Verbose		    [1]
 		    }
 		    PropName		    "Serial"
 		  }
@@ -2826,7 +2826,7 @@ Model {
   }
   System {
     Name		    "Autoalign_system"
-    Location		    [-7, -7, 1543, 831]
+    Location		    [-6, 0, 775, 830]
     Open		    on
     ModelBrowserVisibility  off
     ModelBrowserWidth	    200
@@ -2838,9 +2838,9 @@ Model {
     TiledPaperMargins	    [0.500000, 0.500000, 0.500000, 0.500000]
     TiledPageScale	    1
     ShowPageBoundaries	    off
-    ZoomFactor		    "150"
+    ZoomFactor		    "125"
     ReportName		    "simulink-default.rpt"
-    SIDHighWatermark	    "430"
+    SIDHighWatermark	    "432"
     Block {
       BlockType		      DigitalClock
       Name		      "Digital Clock"
@@ -2862,13 +2862,6 @@ Model {
       RequestExecContextInheritance off
       SFBlockType	      "MATLAB Function"
       Variant		      off
-      Port {
-	PortNumber		4
-	Name			"wire_finish"
-	PropagatedSignals	"finish"
-	RTWStorageClass		"Auto"
-	DataLoggingNameMode	"SignalName"
-      }
       System {
 	Name			"MAIN control"
 	Location		[223, 338, 826, 833]
@@ -4021,7 +4014,7 @@ Model {
       "66666666666667;0.717647058823529 0.274509803921569 1;0.392156862745098 0.831372549019608 0.0745098039215686;0.05"
       "88235294117647 1 1;1 0.0745098039215686 0.650980392156863])),extmgr.Configuration('Tools','Plot Navigation',true"
       ",'OnceAtStop',false,'PreviousZoomMode','ZoomX','PreviousAutoscale','XY'),extmgr.Configuration('Tools','Measureme"
-      "nts',true,'Version','2016b')),'Version','2016b','Position',[84.2 222.6 760 420],'VisibleAtModelOpen','on')"
+      "nts',true,'Version','2016b')),'Version','2016b','Position',[1 41 1531.2 748.8])"
       NumInputPorts	      "3"
     }
     Block {
@@ -4989,7 +4982,7 @@ Model {
       SID		      "9"
       Position		      [145, 425, 175, 455]
       ZOrder		      9
-      Value		      "30"
+      Value		      "20"
     }
     Block {
       BlockType		      ToWorkspace
@@ -4998,7 +4991,7 @@ Model {
       Ports		      [1]
       Position		      [840, 355, 900, 385]
       ZOrder		      104
-      StopFcn		      "setappdata(0,'finish',finish);"
+      StopFcn		      "setappdata(0,'finish',finish);\ndrawnow;"
       VariableName	      "finish"
       MaxDataPoints	      "inf"
       Save2DSignal	      "3-D array (concatenate along third dimension)"
@@ -5026,7 +5019,7 @@ Model {
       SID		      "7"
       Position		      [145, 315, 175, 345]
       ZOrder		      7
-      Value		      "2"
+      Value		      "3"
     }
     Block {
       BlockType		      Constant
@@ -5034,7 +5027,7 @@ Model {
       SID		      "4"
       Position		      [145, 95, 175, 125]
       ZOrder		      4
-      Value		      "2"
+      Value		      "-1"
     }
     Block {
       BlockType		      DataStoreMemory
@@ -5533,9 +5526,7 @@ Model {
       }
     }
     Line {
-      Name		      "wire_finish"
       ZOrder		      379
-      Labels		      [0, 0]
       SrcBlock		      "MAIN control"
       SrcPort		      4
       DstBlock		      "MATLAB Function"
@@ -5616,9 +5607,6 @@ Stateflow {
     screen		    [1 1 3600 1200 1.180555555555556]
     treeNode		    [0 3 0 0]
     viewObj		    2
-    visible		    1
-    subviewS {
-    }
     ssIdHighWaterMark	    9
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
@@ -5820,6 +5808,9 @@ Stateflow {
     screen		    [1 1 3600 1200 1.180555555555556]
     treeNode		    [0 13 0 0]
     viewObj		    12
+    visible		    1
+    subviewS {
+    }
     ssIdHighWaterMark	    33
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
@@ -6510,9 +6501,6 @@ Stateflow {
     screen		    [1 1 3600 1200 1.180555555555556]
     treeNode		    [0 41 0 0]
     viewObj		    40
-    visible		    1
-    subviewS {
-    }
     ssIdHighWaterMark	    7
     decomposition	    CLUSTER_CHART
     type		    EML_CHART
@@ -7321,10 +7309,11 @@ Stateflow {
     decomposition	    CLUSTER_STATE
     eml {
       isEML		      1
-      script		      "function y = fcn(u)\nglobal pause_hold;\nglobal pause_time;\nif u>0\n    pause_hold=u;\n    setap"
-      "pdata(0,'setpause',u);\nelse\n    if pause_hold>0\n       if pause_time<=10\n           pause_time=pause_time+1;"
-      "\n       else\n           pause_hold=0;\n           setappdata(0,'setpause',0);\n       end\n    else\n        s"
-      "etappdata(0,'setpause',0);\n    end\nend\ny = pause_hold;"
+      script		      "function y = fcn(u)\nglobal pause_hold;\nglobal pause_time;\nif u~=0\n    pause_hold=u;\n    seta"
+      "ppdata(0,'setpause',u);\n%     display('SIM: set pause');\n    drawnow;\n% else\n%     setappdata(0,'setpause',0"
+      ");\n%     drawnow;\nend\n%     if pause_hold>0\n%        if pause_time<=10\n%            pause_time=pause_time+1"
+      ";\n%        else\n%            pause_hold=0;\n%            setappdata(0,'setpause',0);\n%        end\n%     else"
+      "\n%         setappdata(0,'setpause',0);\n%     end\n% end\ny = pause_hold;"
       editorLayout	      "100 M4x1[10 5 700 500]"
     }
   }
