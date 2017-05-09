@@ -31,7 +31,7 @@ function varargout = UserInterface(varargin)
 
 % Edit the above text to modify the response to help UserInterface
 
-% Last Modified by GUIDE v2.5 05-May-2017 10:10:57
+% Last Modified by GUIDE v2.5 09-May-2017 14:07:29
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -68,14 +68,88 @@ guidata(hObject, handles);
 
 % UIWAIT makes UserInterface wait for user response (see UIRESUME)
 % uiwait(handles.fig_GUI);
-global state_on;
-global connected;
-global check_sum;
-load_system('Autoalign_system.slx');
-% set_param('Autoalign_system','SimulationMode','external');
-%% %% %% %% %% INITIALIZATION %% %% %% %% %%
 
-% clear: DATA
+load_system('Autoalign_system.slx');
+set_param('Autoalign_system','SimulationMode','external');
+%% START INITIALIZATION
+
+%% PARAMETER PANEL
+% set default values
+set(handles.val_centerx,'String','0');
+set(handles.val_centery,'String','0');
+set(handles.val_diameter,'String','50');
+set(handles.val_loops,'String','3');
+set(handles.val_delay,'String','16');
+set(handles.val_tRead,'String','16');
+set(handles.val_tot_acc,'String','100');
+set(handles.txt_tot_acc_unit,'String','nm');
+set(handles.ind_time_min,'String','1');
+set(handles.ind_time_sec,'String','15');
+
+% enable
+set(handles.val_centerx,'enable','on');
+set(handles.val_centery,'enable','on');
+set(handles.val_diameter,'enable','on');
+set(handles.val_loops,'enable','on');
+set(handles.val_delay,'enable','on');
+set(handles.val_tRead,'enable','on');
+set(handles.val_tot_acc,'enable','on');
+
+% reset background color
+set(handles.val_centerx,'backgroundcolor','white');
+set(handles.val_centery,'backgroundcolor','white');
+set(handles.val_diameter,'backgroundcolor','white');
+set(handles.val_loops,'backgroundcolor','white');
+set(handles.val_delay,'backgroundcolor','white');
+set(handles.val_tRead,'backgroundcolor','white');
+set(handles.val_tot_acc,'backgroundcolor','white');
+
+%% RESULTS PANEL
+% set default values
+set(handles.val_sample,'String','800');
+set(handles.val_acc,'String','10');
+set(handles.txt_acc_unit,'String','um');
+set(handles.val_xmin,'String','-25');
+set(handles.val_xmax,'String','25');
+set(handles.val_ymin,'String','-25');
+set(handles.val_ymax,'String','25');
+set(handles.val_curr_cycle,'String','...');
+set(handles.val_tot_cycle,'String','4');
+set(handles.val_Pmin,'String','...');
+set(handles.val_Pxmin,'String','...');
+set(handles.val_Pymin,'String','...');
+set(handles.val_Ptmin,'String','...');
+set(handles.val_Pmax,'String','...');
+set(handles.val_Pxmax,'String','...');
+set(handles.val_Pymax,'String','...');
+set(handles.val_Ptmax,'String','...');
+
+%% CONTROL PANEL
+% set default values
+set(handles.ind_sim,'String','OFF');
+set(handles.ind_status,'String','IDLE');
+set(handles.ind_error,'String','');
+set(handles.btn_on,'string','Run');
+set(handles.btn_pause,'string','Pause');
+
+% enable
+set(handles.btn_on,'Enable','on');
+set(handles.btn_pause,'Enable','off');
+set(handles.btn_reset,'Enable','on');
+set(handles.btn_exit,'Enable','on');
+
+% set foreground color
+set(handles.ind_sim,'Foregroundcolor','black');
+set(handles.ind_status,'Foregroundcolor','black');
+set(handles.ind_error,'Foregroundcolor','red');
+
+%% VARIABLES
+% declare globals
+global fcn_mode;
+global centerx_old;
+global centery_old;
+
+% clear values
 if isappdata(0,'x_data')
     rmappdata(0,'x_data');
 end
@@ -118,95 +192,27 @@ end
 if isappdata(0,'Pmax_time')
     rmappdata(0,'Pmax_time');
 end
-if isappdata(0,'setpause')
-    rmappdata(0,'setpause');
+if isappdata(0,'tot_acc')
+    rmappdata(0,'tot_acc');
 end
-if isappdata(0,'finish')
-    rmappdata(0,'finish');
+if isappdata(0,'cycles')
+    rmappdata(0,'cycles');
 end
 
-% set values for elements in Settings panel
-set(handles.val_centerx,'String','0');
-set(handles.val_centery,'String','0');
-set(handles.val_diameter,'String','50');
-set(handles.val_loops,'String','3');
-set(handles.val_delay,'String','16');
-set(handles.val_tRead,'String','16');
+% Set default values
+fcn_mode=0;
+centerx_old=0;
+centery_old=0;
 
-% enable elements in Settings panel
-set(handles.val_centerx,'enable','on');
-set(handles.val_centery,'enable','on');
-set(handles.val_diameter,'enable','on');
-set(handles.val_loops,'enable','on');
-set(handles.val_delay,'enable','on');
-set(handles.val_tRead,'enable','on');
-
-% set color for elements in Settings panel
-set(handles.val_centerx,'backgroundcolor','white');
-set(handles.val_centery,'backgroundcolor','white');
-set(handles.val_diameter,'backgroundcolor','white');
-set(handles.val_loops,'backgroundcolor','white');
-set(handles.val_delay,'backgroundcolor','white');
-set(handles.val_tRead,'backgroundcolor','white');
-
-% set values for elements in Results panel
-set(handles.val_sample,'String','800');
-set(handles.val_time,'String','1m 16s');
-set(handles.val_acc,'String','10');
-set(handles.val_xmin,'String','-25');
-set(handles.val_xmax,'String','25');
-set(handles.val_ymin,'String','-25');
-set(handles.val_ymax,'String','25');
-
-% set values for elements in Power panel
-set(handles.val_Pmin,'String','...');
-set(handles.val_Pxmin,'String','...');
-set(handles.val_Pymin,'String','...');
-set(handles.val_Ptmin,'String','...');
-set(handles.val_Pmax,'String','...');
-set(handles.val_Pxmax,'String','...');
-set(handles.val_Pymax,'String','...');
-set(handles.val_Ptmax,'String','...');
-
-% set values for elements in Status panel
-set(handles.ind_sim,'String','OFF');
-set(handles.ind_status,'String','IDLE');
-set(handles.ind_error,'String','NONE');
-set(handles.ind_time,'String','1 min, 15 sec');
-
-% set color for elements in Status panel
-set(handles.ind_sim,'Foregroundcolor',[0 0 0]);
-set(handles.ind_status,'Foregroundcolor',[0 1 0]);
-set(handles.ind_error,'Foregroundcolor',[.5 0 0]);
-
-
-% enable elements in Controls panel
-set(handles.btn_connect,'Enable','on');
-set(handles.btn_on,'Enable','off');
-set(handles.btn_export,'Enable','off');
-set(handles.btn_reset,'Enable','on');
-
-% set values for elements in Controls panel
-set(handles.btn_connect,'string','Connect');
-set(handles.btn_on,'string','Run');
-state_on=0;
-connected=0; % external setting-> 0, debug setting-> -1
-check_sum=0;
-
-% set color for elements in Controls panel
-set(handles.btn_connect,'backgroundcolor',[0.94 0.94 0.94]);
-set(handles.btn_on,'backgroundcolor',[0.94 0.94 0.94]);
-set(handles.btn_connect,'foregroundcolor',[0 0 0]);
-set(handles.btn_on,'foregroundcolor',[0 0 0]);
-
-% set data values
 setappdata(0,'centerx',0);
 setappdata(0,'centery',0);
 setappdata(0,'diameter',50);
 setappdata(0,'loops',3);
 setappdata(0,'delay',16);
 setappdata(0,'read_time',16);
+setappdata(0,'tot_acc',10);
 
+%% PLOTS
 % Default location plot
 cla(handles.plt_pos,'reset');
 title(handles.plt_pos,'Location matrix');
@@ -221,7 +227,6 @@ cla(handles.plt_time,'reset'); % clear plot
 title(handles.plt_time,'Data in time domain');
 xlim(handles.plt_time,[0 90]);
 xlabel(handles.plt_time,'time [seconds]');
-% legend(handles.plt_time,'Power','X position','Y position');
 grid(handles.plt_time,'on');
 grid(handles.plt_time,'minor');
 yyaxis(handles.plt_time,'left');
@@ -231,7 +236,10 @@ yyaxis(handles.plt_time,'right');
 ylabel(handles.plt_time,'Power [uW]');
 ylim(handles.plt_time,[0 3]);
 
-%% %% %% %% %% MAIN FUNCTION %% %% %% %% %%
+%% END OF INITIALIZATION
+
+%% START MAIN CODE
+
 % --- Outputs from this function are returned to the command line.
 function varargout = UserInterface_OutputFcn(hObject, eventdata, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
@@ -242,643 +250,249 @@ function varargout = UserInterface_OutputFcn(hObject, eventdata, handles)
 % Get default command line output from handles structure
 varargout{1} = handles.output;
 
-%% %% %% %% %% BUTTON CALLBACKS %% %% %% %% %% 
-% --- Executes on button press in btn_connect.
-function btn_connect_Callback(hObject, eventdata, handles)
-% hObject    handle to btn_connect (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-global connected;
-global state_on;
-global check_sum;
-display('btn_Connect');
-display(connected);
-
-% disable inputs & buttons
-set(handles.val_centerx,'Enable','off');
-set(handles.val_centery,'Enable','off');
-set(handles.val_diameter,'Enable','off');
-set(handles.val_loops,'Enable','off');
-set(handles.val_delay,'Enable','off');
-set(handles.val_tRead,'Enable','off');
-set(handles.btn_connect,'Enable','off');
-set(handles.btn_on,'Enable','off');
-set(handles.btn_export,'Enable','off');
-
-switch connected
-    case -1 % debug mode
-        display('btn_Connect: debug mode');
-        set(handles.btn_connect,'string','Debug');
-        set(handles.ind_sim,'String','ON');
-        set(handles.ind_status,'String','DEBUGGING');
-        set(handles.ind_status,'ForegroundColor',[0 0 0]);
-        set_param('Autoalign_system','SimulationMode','normal');
-        connected=0;
-        % enable inputs
-        set(handles.val_centerx,'Enable','on');
-        set(handles.val_centery,'Enable','on');
-        set(handles.val_diameter,'Enable','on');
-        set(handles.val_loops,'Enable','on');
-        set(handles.val_delay,'Enable','on');
-        set(handles.val_tRead,'Enable','on');
-        set(handles.btn_connect,'Enable','on');
-        set(handles.btn_connect,'String','Connect');
-        set(handles.btn_on,'Enable','on');
-        set(handles.btn_on,'String','Run');
-        state_on=1;
-        
-    case 0 % Connecting
-        display('btn_C: connecting');
-%         set_param('Autoalign_system','HardwareBoard','Arduino Mega 2560');
-        set(handles.ind_status,'String','CONNECTING');
-        set(handles.ind_status,'ForegroundColor',[0 0.69 0.94]);
-        % checksum 
-        if check_sum==1
-            % already build, only connecting required
-            display('btn_Connect: already build');
-            [result,changes]=main(0);
-            display('btn_Connect: simulink mode set to 0 (idle)');
-            set_param('Autoalign_system','SimulationCommand','Connect');
-            display('btn_Connect: connected');
-            set(handles.ind_sim,'String','ON');
-            set(handles.ind_status,'String','CONNECTED');
-            set(handles.ind_status,'ForegroundColor',[0 0.5 0.5]);
-            connected=1;
-            state_on=1;
-            % enable inputs
-            set(handles.val_centerx,'Enable','on');
-            set(handles.val_centery,'Enable','on');
-            set(handles.val_diameter,'Enable','on');
-            set(handles.val_loops,'Enable','on');
-            set(handles.val_delay,'Enable','on');
-            set(handles.val_tRead,'Enable','on');
-            set(handles.btn_on,'Enable','on');
-            set(handles.btn_on,'String','Run');
-            set(handles.btn_connect,'Enable','on');
-            set(handles.btn_connect,'String','Disconnect');
-            return;
-        else
-            display('start build');
-            check_sum=1;
-            set(handles.ind_status,'String','BUILDING');
-            set(handles.ind_status,'ForegroundColor',[0 0.44 0.75]);
-            [result,changes]=main(1);
-            % enable inputs
-            set(handles.val_centerx,'Enable','on');
-            set(handles.val_centery,'Enable','on');
-            set(handles.val_diameter,'Enable','on');
-            set(handles.val_loops,'Enable','on');
-            set(handles.val_delay,'Enable','on');
-            set(handles.val_tRead,'Enable','on');
-            set(handles.btn_on,'Enable','on');
-            set(handles.btn_on,'String','Run');
-            set(handles.btn_connect,'Enable','on');
-            set(handles.btn_connect,'String','Disconnect');
-        end
-    case 1 % Disconnecting
-        display('btn_Connect: disconnecting');
-        set(handles.ind_status,'String','STOPPING');
-        set(handles.ind_status,'foregroundcolor',[0 0.44 0.75]);
-        state_on=0;
-        connected=0;
-        [result,changes]=main(0); 
-        % enable inputs
-        set(handles.val_centerx,'Enable','on');
-        set(handles.val_centery,'Enable','on');
-        set(handles.val_diameter,'Enable','on');
-        set(handles.val_loops,'Enable','on');
-        set(handles.val_delay,'Enable','on');
-        set(handles.val_tRead,'Enable','on');
-        set(handles.btn_on,'Enable','off');
-        set(handles.btn_connect,'Enable','on');
-        set(handles.btn_connect,'String','Connect');
-    otherwise % do nothing
-        return;
-end
-switch result
-    case 'build'
-        display('btn_Connect: result=build');
-       % enable inputs
-        set(handles.val_centerx,'Enable','on');
-        set(handles.val_centery,'Enable','on');
-        set(handles.val_diameter,'Enable','on');
-        set(handles.val_loops,'Enable','on');
-        set(handles.val_delay,'Enable','on');
-        set(handles.val_tRead,'Enable','on');
-        set(handles.ind_status,'String','BUILD');
-        set(handles.ind_status,'ForegroundColor',[0 0 1]);
-        set(handles.btn_on,'Enable','on');
-        set(handles.btn_on,'String','Run');
-        set(handles.btn_connect,'Enable','on');
-        set(handles.btn_connect,'String','Disconnect');
-%         state_on=1;
-    case 'stopped'
-        display('btn_Connect: result=stopped');
-        set(handles.ind_status,'String','DISCONNECTING');
-        set(handles.ind_status,'foregroundcolor',[0 0.44 0.75]);
-        set_param('Autoalign_system','SimulationCommand','Disconnect');
-        set(handles.ind_status,'String','DISCONNECTED');
-        set(handles.ind_status,'foregroundcolor',[0 0.5 0.5]);
-        connected=0;
-        % enable inputs
-        set(handles.val_centerx,'Enable','on');
-        set(handles.val_centery,'Enable','on');
-        set(handles.val_diameter,'Enable','on');
-        set(handles.val_loops,'Enable','on');
-        set(handles.val_delay,'Enable','on');
-        set(handles.val_tRead,'Enable','on');
-        set(handles.btn_on,'Enable','off');
-        set(handles.btn_on,'String','Run');
-        set(handles.btn_export,'Enable','off');
-        set(handles.btn_connect,'Enable','on');
-        set(handles.btn_connect,'String','Connect');
-    otherwise
-        display('btn_Connect: result=unknown');
-        return;
-end
-
+%% BUTTON CALLBACKS
 % --- Executes on button press in btn_on.
 function btn_on_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_on (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % state=str2double(get(hObject,'Value'));
-global state_on;
-global connected;
-global cx;
-global cy;
-global diam;
-display('btn_ON');
-display(state_on);
-% disable inputs & buttons
-set(handles.val_centerx,'Enable','off');
-set(handles.val_centery,'Enable','off');
-set(handles.val_diameter,'Enable','off');
-set(handles.val_loops,'Enable','off');
-set(handles.val_delay,'Enable','off');
-set(handles.val_tRead,'Enable','off');
-set(handles.btn_connect,'Enable','off');
-set(handles.btn_on,'Enable','off');
-set(handles.btn_export,'Enable','off');
-set(handles.ind_error,'String','');
+%% DECLARE GLOBALS
+global centerx_old;
+global centery_old;
 
-switch state_on
-    case -1 % EXIT
-        display('btn_ON: EXIT');
-        state_on=-1;
-        [result,changes]=main(-1);
-    case 0 % IDLE mode
-        display('btn_ON: IDLE');
-        set(handles.ind_status,'String','STOPPING');
-        set(handles.ind_status,'foregroundColor',[1 0 0]);
-        state_on=0;
-        [result,changes]=main(0);
-    case 1 % MOVE mode
-        display('btn_ON: moving');
-        time=getappdata(0,'approx_time');
-        time_txt=strcat(num2str(floor(time/60)),' min, ',num2str(floor(time-floor(time/60)*60)),' sec');
-        set(handles.ind_time,'String',time_txt);
-        set(handles.btn_on,'String','Pause');
-        set(handles.btn_on,'Enable','on');
-        set(handles.ind_status,'String','REPOSITIONING');
-        set(handles.ind_status,'ForegroundColor',[0 0.5 0.5]);
-        state_on=3;
-        [result,changes]=main(2);
-    case 2 % SEARCH mode
-        display('btn_ON: searching');
-        time=getappdata(0,'approx_time');
-        time_txt=strcat(num2str(floor(time/60)),'m ',num2str(round(time-floor(time/60)*60)),'s');
-        set(handles.val_time,'String',time_txt);
-        set(handles.btn_on,'String','Pause');
-        set(handles.btn_on,'Enable','on');
-        set(handles.ind_status,'String','RUNNING');
-        set(handles.ind_status,'ForegroundColor',[0 0.5 0]);
-        state_on=3;
-        [result,changes]=main(2);
-    case 3 % PAUSE simulation
-        display('btn_ON: pausing');
-        set(handles.ind_status,'String','PAUSING');
-        set(handles.ind_status,'ForegroundColor',[0 0.75 0]);
-        state_on=4;
-        [result,changes]=main(3);
-    case 4 % UNPAUSE simulation
-        display('btn_ON: unpausing');
-        set(handles.btn_on,'String','Pause');
-        set(handles.btn_on,'Enable','on');
-        state_on=3;
-        [result,changes]=main(4);
-    otherwise
-        display('btn_ON: unknown state');
-        return;
-end
-switch result
-    case 'stopped'
-        display('btn_ON: result=stopped');
-        state_on=1;
-        connected=1;
-        % enable inputs
-        set(handles.val_centerx,'Enable','on');
-        set(handles.val_centery,'Enable','on');
-        set(handles.val_diameter,'Enable','on');
-        set(handles.val_loops,'Enable','on');
-        set(handles.val_delay,'Enable','on');
-        set(handles.val_tRead,'Enable','on');
-        set(handles.btn_on,'String','Run');
-        set(handles.btn_on,'Enable','on');
-        set(handles.btn_connect,'Enable','on');
-        set(handles.btn_export,'Enable','on');
-        set(handles.ind_sim,'String','OFF');
-        set(handles.ind_status,'String','STOPPED');
-        set(handles.ind_status,'Foregroundcolor',[0.5 0 0]);
-        return;
-    case 'finished'
-        display('btn_ON: result=finished');
-        state_on=1;
-        connected=1;
-        % enable inputs
-        set(handles.val_centerx,'Enable','on');
-        set(handles.val_centery,'Enable','on');
-        set(handles.val_diameter,'Enable','on');
-        set(handles.val_loops,'Enable','on');
-        set(handles.val_delay,'Enable','on');
-        set(handles.val_tRead,'Enable','on');
-        set(handles.btn_on,'String','Run');
-        set(handles.btn_on,'Enable','on');
-        set(handles.btn_connect,'Enable','on');
-        set(handles.btn_export,'Enable','on');
-        set(handles.ind_sim,'String','IDLE');
-        set(handles.ind_status,'String','FINISHED');
-        set(handles.ind_status,'Foregroundcolor',[0 1 0]);
-    case 'moved'
-        display('btn_ON: result=moved');
-        set(handles.ind_status,'String','MOVED');
-        set(handles.ind_status,'ForegroundColor',[0 0.5 0.25]);
-        state_on=3;
-        return;
-    case 'paused'
-        display('btn_ON: result=paused');
-        set(handles.val_centerx,'Enable','on');
-        set(handles.val_centery,'Enable','on');
-        set(handles.val_diameter,'Enable','on');
-        set(handles.val_loops,'Enable','on');
-        set(handles.val_delay,'Enable','on');
-        set(handles.val_tRead,'Enable','on');
-        set(handles.ind_status,'String','PAUSED');
-        set(handles.ind_status,'ForegroundColor',[0.93 0.49 0.19]);
-        set(handles.btn_on,'String','Unpause');
-        set(handles.btn_connect,'Enable','on');
-        set(handles.btn_on,'Enable','on');
-        set(handles.btn_export,'Enable','on');
-        state_on=4;
-    case 'unpaused'
-        display('btn_ON: result=unpaused');
-        if changes==0 % resume
-            display('btn_O: no changes, resuming');
-            set(handles.ind_status,'String','RESUMING');
-            set(handles.ind_status,'ForegroundColor',[0 1 0]);
-            state_on=3;
-        else % restart
-            display('btn_ON: changes, restarting');
-            set(handles.ind_status,'String','RESTARTING');
-            set(handles.ind_status,'ForegroundColor',[0.78 0.35 0.07]);
-            state_on=2;
-            btn_on_Callback(hObject, eventdata, handles);
-        end
-        return;
-    case 'time'
-        display('btn_ON: result=time');
-        state_on=1;
-        % enable inputs
-        set(handles.val_centerx,'Enable','on');
-        set(handles.val_centery,'Enable','on');
-        set(handles.val_diameter,'Enable','on');
-        set(handles.val_loops,'Enable','on');
-        set(handles.val_delay,'Enable','on');
-        set(handles.val_tRead,'Enable','on');
-        set(handles.btn_on,'String','Run');
-        set(handles.btn_on,'Enable','on');
-        set(handles.btn_connect,'Enable','on');
-        set(handles.btn_export,'Enable','on');
-        set(handles.ind_error,'String','Simulation time limit reached!');
-        return;
-     case 'exit'
-        display('btn_ON: result=exit');
-        state_on=0;
-        connected=0;
-        % enable inputs
-        set(handles.val_centerx,'Enable','on');
-        set(handles.val_centery,'Enable','on');
-        set(handles.val_diameter,'Enable','on');
-        set(handles.val_loops,'Enable','on');
-        set(handles.val_delay,'Enable','on');
-        set(handles.val_tRead,'Enable','on');
-        set(handles.btn_on,'String','Run');
-        set(handles.btn_on,'Enable','off');
-        set(handles.btn_connect,'String','Connect');
-        set(handles.btn_connect,'Enable','on');
-        set(handles.btn_export,'Enable','on');
-        set(handles.ind_status,'String','IDLE');
-        set(handles.ind_status,'ForegroundColor',[0.5 0.5 0.5]);
-        set(handles.ind_sim,'String','OFF');
-        set(handles.ind_sim,'ForegroundColor',[0 0 0]);
-        return;
-    otherwise
-        display('btn_ON: result=unknown');
-        return;
-end
-display('btn_ON: check data');
-% check output data
-if ~isappdata(0,'x_data')||~isappdata(0,'y_data')||~isappdata(0,'p_data')...
-        ||~isappdata(0,'clk')||~isappdata(0,'centerx')||~isappdata(0,'centery')...
-        ||~isappdata(0,'diameter')||~isappdata(0,'loops')
-    set(handles.ind_error,'String','Unable to load output data');
-    display('btn_ON: data not good, skip rest');
+
+%% MAIN CODE
+display('BTN_ON: is pressed');
+
+% DISABLE inputs
+% set(handles.val_centerx,'Enable','off');
+% set(handles.val_centery,'Enable','off');
+% set(handles.val_diameter,'Enable','off');
+% set(handles.val_loops,'Enable','off');
+% set(handles.val_delay,'Enable','off');
+% set(handles.val_tRead,'Enable','off');
+% set(handles.val_tot_acc,'Enable','off');
+% set(handles.btn_exit,'Enable','off');
+% set(handles.btn_on,'Enable','off');
+% set(handles.btn_pause,'Enable','off');
+% set(handles.ind_error,'String','');
+
+% get parameters
+if ~isappdata(0,'centerx')||~isappdata(0,'centery')||...
+        ~isappdata(0,'diameter')||~isappdata(0,'loops')||...
+        ~isappdata(0,'delay')||~isappdata(0,'read_time')||~isappdata(0,'tot_acc')
+    display('BTN_ON: appdata incorrect');
+    set(handles.ind_err,'String','ERROR: appdata is corrupted, unable to continue!');
     return;
 end
-set(handles.ind_status,'String','PLOTTING');
-set(handles.ind_status,'ForegroundColor',[1 1 0]);
-set(handles.btn_export,'Enable','on');
-% extract data
-xdev=getappdata(0,'x_data');
-ydev=getappdata(0,'y_data');
-p=getappdata(0,'p_data');
-t=getappdata(0,'clk');
-part=getappdata(0,'finish');
-
 centerx=getappdata(0,'centerx');
 centery=getappdata(0,'centery');
 diameter=getappdata(0,'diameter');
 loops=getappdata(0,'loops');
+delay=getappdata(0,'delay');
+read_time=getappdata(0,'read_time');
+tot_acc=getappdata(0,'tot_acc');
+
+% calculations
+xmin=centerx-diameter/2;
+ymin=centery-diameter/2;
+xmax=centerx+diameter/2;
+ymax=centery+diameter/2;
+
 acc=diameter/(2*loops-1);
-set(handles.val_acc,'String',acc);
-if length(xdev)<length(ydev)
-    %add zero's to xdev
-    xdev(numel(ydev))=0;
-    display('btn_ON: x < y');
-elseif length(xdev)>length(ydev)
-    %add zero's to ydev
-    display('btn_ON: x > y');
-    ydev(numel(xdev))=0;
-end
+cycles=ceil(log(acc/tot_acc))+2;
+set(handles.val_acc,'String',num2str(acc));
+set(handles.val_tot_cycle,'String',num2str(cycles));
 
-% transform steps to position
-factor=50/4096; % 50um/4096 steps, theoretical accuracy (excl. hysteresis)
-xpos=xdev.*factor;
-ypos=ydev.*factor;
-mode=1;
-for item=1:length(part)
-    if part(item,1)==1 || part(item,1)==2
-        mode=part(item,1);
+main(0); % update simulation
+
+for cycle=1:cycles
+    display(cycle);
+    % clear appdata
+    if isappdata(0,'x_data')
+        rmappdata(0,'x_data');
     end
-    if mode==1 % start of search state
-        cx=centerx;
-        cy=centery;
-        xnew(item,1)=xpos(item,1)+(centerx-diameter/(4*loops-2));
-        ynew(item,1)=ypos(item,1)+(centery-diameter/(4*loops-2));
-    elseif mode==2 % start of move state
-        xnew(item,1)=cx-diam/2-centerx;
-        ynew(item,1)=cy-diam/2-centery;
+    if isappdata(0,'x_pos')
+        rmappdata(0,'x_pos');
     end
+    if isappdata(0,'y_data')
+        rmappdata(0,'y_data');
+    end
+    if isappdata(0,'y_pos')
+        rmappdata(0,'y_pos');
+    end
+    if isappdata(0,'p_data')
+        rmappdata(0,'p_data');
+    end
+    if isappdata(0,'clk')
+        rmappdata(0,'clk');
+    end
+    if isappdata(0,'xpow')
+        rmappdata(0,'xpow');
+    end
+    if isappdata(0,'ypow')
+        rmappdata(0,'ypow');
+    end
+    
+    if centerx~=centerx_old || centery~=centery_old
+        % move first
+        main(1); % move mode
+        % reset appdata
+        if isappdata(0,'x_data')
+            rmappdata(0,'x_data');
+        end
+        if isappdata(0,'y_data')
+            rmappdata(0,'y_data');
+        end
+        if isappdata(0,'p_data')
+            rmappdata(0,'p_data');
+        end
+        if isappdata(0,'clk')
+            rmappdata(0,'clk');
+        end
+    end
+    main(2); % search mode
+    % transform steps to position
+    if ~isappdata(0,'x_data')||~isappdata(0,'y_data')||...
+            ~isappdata(0,'p_data')||~isappdata(0,'clk')
+        set(handles.ind_error,'String','ERROR: outputed data is corrupted, terminate simulation?');
+        break;
+    end
+    xstep=getappdata(0,'x_data');
+    ystep=getappdata(0,'y_data');
+    power=getappdata(0,'p_data');
+    clock=getappdata(0,'clk');
+    % check for same length
+    if length(xstep)<length(ystep)
+        % add zeros to xstep
+        xstep(numel(ystep))=0;
+    elseif length(xstep)>length(ystep)
+        % add zeros to ystep
+        ystep(numel(xstep))=0;
+    end
+    xtemp=xstep*4096/50;
+    ytemp=ystep*4096/50;
+    for item=1:length(clock)
+        xpos(item,1)=xtemp(item,1)+(centerx-diameter/(4*loops-2));
+        ypos(item,1)=ytemp(item,1)+(centery-diameter/(4*loops-2));
+    end
+    setappdata(0,'x_pos',xpos);
+    setappdata(0,'y_pos',ypos);
+
+    set(handles.val_xmin,'String',num2str(round(min(xpos))));
+    set(handles.val_xmax,'String',num2str(round(max(xpos))));
+    set(handles.val_ymin,'String',num2str(round(min(ypos))));
+    set(handles.val_ymax,'String',num2str(round(max(ypos))));
+
+    % calculate boundaries for plot
+    xminval=centerx-diameter/2-(diameter/(4*loops-2));
+    xmaxval=centerx+diameter/2+(diameter/(4*loops-2));
+    yminval=centery-diameter/2-(diameter/(4*loops-2));
+    ymaxval=centery+diameter/2+(diameter/(4*loops-2));
+
+    xmin=sign(xminval)*ceil(sign(xminval)*xminval/5)*5;
+    ymin=sign(yminval)*ceil(sign(yminval)*yminval/5)*5;
+    xmax=sign(xmaxval)*ceil(sign(xmaxval)*xmaxval/5)*5;
+    ymax=sign(ymaxval)*ceil(sign(ymaxval)*ymaxval/5)*5;
+
+    plot(handles.plt_pos,xpos,ypos);
+    axis(handles.plt_pos,[xmin xmax ymin ymax]);
+    grid(handles.plt_pos,'on');
+    grid(handles.plt_pos,'minor');
+
+    minright=min(xmin,ymin);
+    maxright=max(xmax,ymax);
+    tmin=0;
+    tmax=max(clock)*1.05;
+    if min(power)==max(power)
+        % no change in power
+        pmin=0;
+        pmax=0.5;
+    else
+        pmin=min(p)*0.9;
+        pmax=max(p)*1.1;
+    end
+    tmaxx=tmax*1.1;
+    xlim(handles.plt_time,[tmin tmaxx]);
+    % plot P(t) (left)
+    yyaxis(handles.plt_time,'left');
+    display('btn_ON: plot time (L)');
+    plot(handles.plt_time,t,xnew,'b',t,ynew,'m');
+    ylim(handles.plt_time,[minright maxright]);
+    % plot X&Y(t) (right)
+    yyaxis(handles.plt_time,'right');
+    display('btn_ON: plot time (R)');
+    plot(handles.plt_time,t,p,'r');
+    ylim(handles.plt_time,[pmin pmax]);
+    ylabel(handles.plt_time,'Power [uW]');
+    % ylabel(handles.plt_time,'Position [um]');
+    grid(handles.plt_time,'on');
+    grid(handles.plt_time,'minor');
+    legend(handles.plt_time,'X position','Y position','Power');
+    % find highest power area
+    max_pow=max(power);
+    trig_minpow=max_pow*0.9;
+    trig_maxpow=max_pow;
+    row=find(power>trig_minpow & power<trig_maxpow);
+    for i=1:size(row)
+       xi(i,1)=xnew(row(i,1),1);
+       yi(i,1)=ynew(row(i,1),1);
+       ti(i,1)=t(row(i,1),1);
+    end
+    setappdata(0,'xpow',xi);
+    setappdata(0,'ypow',yi);
+    plot(handles.plt_pos,xpos,ypos,xi,yi,'r*','markersize',1);
+    axis(handles.plt_pos,[xmin xmax ymin ymax]);
+    grid(handles.plt_pos,'on');
+    grid(handles.plt_pos,'minor');
+    
+    % calculate new values
+    centerx_new=(min(xi)+max(xi))/2;
+    centery_new=(min(yi)+max(yi))/2;
+    diameter_new=diamter/5;
+    
+    
+    % update values
+    set(handles.val_Pmin,'String',num2str(floor(trig_minpow)));
+    set(handles.val_Pmax,'String',num2str(floor(trig_maxpow)));
+    set(handles.val_Pxmin,'String',num2str(floor(xi(numel(1)))));
+    set(handles.val_Pxmax,'String',num2str(floor(xi(numel(row)))));
+    set(handles.val_Pymin,'String',num2str(floor(yi(numel(1)))));
+    set(handles.val_Pymax,'String',num2str(floor(yi(numel(row)))));
+    set(handles.val_Ptmin,'String',num2str(floor(ti(numel(1)))));
+    set(handles.val_Ptmax,'String',num2str(floor(ti(numel(row)))));
+    
+    set(handles.val_centerx,'String',num2str(centerx_new));
+    set(handles.val_centery,'String',num2str(centery_new));
+    set(handles.val_diameter,'String',num2str(diameter_new));
+    
 end
-% xnew(:,1)=xpos(:,1)+(centerx-diameter/(4*loops-2));
-% ynew(:,1)=ypos(:,1)+(centery-diameter/(4*loops-2));
-% display(factor);
 
-% plot location
-display('btn_ON: plot location...');
-set(handles.val_xmin,'String',num2str(round(min(xnew))));
-set(handles.val_xmax,'String',num2str(round(max(xnew))));
-set(handles.val_ymin,'String',num2str(round(min(ynew))));
-set(handles.val_ymax,'String',num2str(round(max(ynew))));
-setappdata(0,'x_pos',xnew);
-setappdata(0,'y_pos',ynew);
-
-% calculate boundaries for plot
-xminval=centerx-diameter/2-(diameter/(4*loops-2));
-xmaxval=centerx+diameter/2+(diameter/(4*loops-2));
-yminval=centery-diameter/2-(diameter/(4*loops-2));
-ymaxval=centery+diameter/2+(diameter/(4*loops-2));
-if sign(xminval)==-1
-    display('btn_ON: xmin is negative');
-    xmin=-ceil(-xminval/5)*5;
-else
-    display('btn_ON: xmin is positive');
-    xmin=ceil(xminval/5)*5;
-end
-if sign(xmaxval)==-1
-    display('btn_ON: xmax is negative');
-    xmax=-ceil(-xmaxval/5)*5;
-else
-    display('btn_ON: xmax is positive');
-    xmax=ceil(xmaxval/5)*5;
-end
-if sign(yminval)==-1
-    display('btn_ON: ymin is negative');
-    ymin=-ceil(-yminval/5)*5;
-else
-    display('btn_ON: ymin is positive');
-    ymin=ceil(yminval/5)*5;
-end
-if sign(ymaxval)==-1
-    display('btn_ON: ymax is negative');
-    ymax=-ceil(-ymaxval/5)*5;
-else
-    display('btn_ON: ymax is positive');
-    ymax=ceil(ymaxval/5)*5;
-end
-% xmin=ceil((centerx-diameter/2-(diameter/(4*loops-2)))/5)*5;
-% xmax=ceil((centerx+diameter/2+(diameter/(4*loops-2)))/5)*5;
-% ymin=ceil((centery-diameter/2-(diameter/(4*loops-2)))/5)*5;
-% ymax=ceil((centery+diameter/2+(diameter/(4*loops-2)))/5)*5;
-
-
-% display(centerx);
-% display(centery);
-% display(diameter);
-% display(loops);
-% display('xmin=centerx-diameter/2-(diameter/(4*loops-2))');
-% display('xmax=centerx+diameter/2+(diameter/(4*loops-2))');
-
-% display(xmin);
-% display(xmax);
-% display(ymin);
-% display(ymax);
-
-plot(handles.plt_pos,xnew,ynew);
-axis(handles.plt_pos,[xmin xmax ymin ymax]);
-% title(handles.plt_pos,'Location matrix');
-% xlabel(handles.plt_pos,'X position');
-% ylabel(handles.plt_pos,'Y position');
-grid(handles.plt_pos,'on');
-grid(handles.plt_pos,'minor');
-
-minright=min(xmin,ymin);
-maxright=max(xmax,ymax);
-tmin=0;
-tmax=max(t)*1.05;
-% display(minright);
-% display(maxright);
-% display(tmin);
-% display(tmax);
-display(min(p));
-display(max(p));
-
-if min(p)==max(p)
-    % no change in power
-    pmin=0;
-    pmax=0.5;
-else
-    pmin=min(p)*0.9;
-    pmax=max(p)*1.1;
-end
-% display(pmin);
-% display(pmax);
-tmaxx=tmax*1.1;
-% title(handles.plt_time,'Data in time domain');
-% xlabel(handles.plt_time,'Time [seconds]');
-xlim(handles.plt_time,[tmin tmaxx]);
-% plot P(t) (left)
-yyaxis(handles.plt_time,'left');
-display('btn_ON: plot time (L)');
-plot(handles.plt_time,t,xnew,'b',t,ynew,'m');
-ylim(handles.plt_time,[minright maxright]);
-% plot X&Y(t) (right)
-yyaxis(handles.plt_time,'right');
-display('btn_ON: plot time (R)');
-plot(handles.plt_time,t,p,'r');
-ylim(handles.plt_time,[pmin pmax]);
-ylabel(handles.plt_time,'Power [uW]');
-% ylabel(handles.plt_time,'Position [um]');
-grid(handles.plt_time,'on');
-grid(handles.plt_time,'minor');
-legend(handles.plt_time,'X position','Y position','Power');
-
-set(handles.ind_sim,'String','OFF');
-set(handles.ind_sim,'ForegroundColor',[0 0 0]); % black
-
-display('btn_ON: find highest power');
-% find highest power area
-max_p=max(p);
-trigminp=max_p*0.9;
-trigmaxp=max_p;
-row=find(p>trigminp & p<trigmaxp);
-for i=1:size(row)
-   xi(i,1)=xnew(row(i,1),1);
-   yi(i,1)=ynew(row(i,1),1);
-   ti(i,1)=t(row(i,1),1);
-end
-
-setappdata(0,'xnew',xi);
-setappdata(0,'ynew',yi);
-plot(handles.plt_pos,xnew,ynew,xi,yi,'r*','markersize',1);
-% title(handles.plt_pos,'Location matrix');
-% xlabel(handles.plt_pos,'X position');
-% ylabel(handles.plt_pos,'Y position');
-axis(handles.plt_pos,[xmin xmax ymin ymax]);
-grid(handles.plt_pos,'on');
-grid(handles.plt_pos,'minor');
-
-set(handles.val_Pmin,'String',num2str(floor(trigminp)));
-set(handles.val_Pmax,'String',num2str(floor(trigmaxp)));
-set(handles.val_Pxmin,'String',num2str(floor(xi(numel(1)))));
-set(handles.val_Pxmax,'String',num2str(floor(xi(numel(row)))));
-set(handles.val_Pymin,'String',num2str(floor(yi(numel(1)))));
-set(handles.val_Pymax,'String',num2str(floor(yi(numel(row)))));
-set(handles.val_Ptmin,'String',num2str(floor(ti(numel(1)))));
-set(handles.val_Ptmax,'String',num2str(floor(ti(numel(row)))));
-
-set(handles.ind_status,'String','IDLE');
-set(handles.ind_status,'ForegroundColor',[0.5 0.5 0.5]);
-set(handles.ind_sim,'String','OFF');
-set(handles.ind_sim,'ForegroundColor',[0 0 0]);
 display('btn_ON: END');
 
-% --- Executes on button press in btn_export.
-function btn_export_Callback(hObject, eventdata, handles)
-% hObject    handle to btn_export (see GCBO)
+% --- Executes on button press in btn_pause.
+function btn_pause_Callback(hObject, eventdata, handles)
+% hObject    handle to btn_pause (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % check output data
-if ~isappdata(0,'x_pos')||~isappdata(0,'y_pos')||~isappdata(0,'p_data')...
-        ||~isappdata(0,'clk')||~isappdata(0,'centerx')||~isappdata(0,'centery')...
-        ||~isappdata(0,'diameter')||~isappdata(0,'loops')
-    set(handles.ind_error,'String','Unable to load output data');
-    return;
-end
-set(handles.ind_sim,'String','BUSY');
-% set(handles.ind_sim,'ForegroundColor',[0.5 0 0]); % red
-Time=getappdata(0,'clk');
-X_value=getappdata(0,'x_pos');
-Y_value=getappdata(0,'y_pos');
-Power=getappdata(0,'p_data');
-
-[filename,pathname,filter]=uiputfile({'*.xlsx','Excel-Workbook';...
-    '*.csv','CSV (Comma-Seperated Value)';...
-    '*.txt','Text Document';'*.*','All Files'}...
-    ,'Export data','Alignment Data.xlsx');
-if isequal(filename,0)||isequal(pathname,0)
-    % check for cancel
-    set(handles.ind_error,'String','Export cancelled');
-    return;
-end
-[f,fname,fext]=fileparts(filename);
-full=fullfile(pathname,[fname,fext]);
-m=[Time,X_value,Y_value,Power];
-header={'Time', 'X-value', 'Y-value', 'Power'};
-% | Time | X-val | Y-val | Pow |
-% |------+-------+-------+-----|
-% |    0 |  400  |  400  |   0 |
-% |    1 |  400  |  300  |  50 |
-% |    2 |  ...  |  ...  | ... |
-switch filter
-    case 1 % *.xlsx
-        xlswrite(full,header,'Sheet1','A1');
-        xlswrite(full,m,'Sheet1','A2');
-    case 2 % *.csv
-        mtable=table(Time,X_value,Y_value,Power);
-        writetable(mtable,full,'WriteVariableNames',1);
-    case 3 %*.txt
-        mtable=table(Time,X_value,Y_value,Power);
-        writetable(mtable,full,'WriteVariableNames',1);
-    otherwise % *.*
-        if strcmp(fext,'.xlsx')
-            % correct excel extensions
-            xlswrite(full,header,'Sheet1','A1');
-            xlswrite(full,m,'Sheet1','A2');
-        elseif strcmp(fext,'.csv')||strcmp(fext,'.txt')
-            % correct other extension
-            mtable=table(Time,X_value,Y_value,Power);
-            writetable(mtable,full,'WriteVariableNames',1);
-        else
-            % invalid extension
-            fext='.txt';
-            full=fullfile(pathname,[fname,fext]);
-            mtable=table(Time,X_value,Y_value,Power);
-            writetable(mtable,full,'WriteVariableNames',1);
-            set(handles.ind_error,'String','unknown extension, exporting to *.txt file');
-        end
-end
-set(handles.ind_status,'String',strcat('To *',fext));
-set(handles.ind_sim,'String','OFF');
-% set(handles.ind_sim,'ForegroundColor',[0 0 0]); % BLACK
+set(handles.ind_error,'string','Warning: pause button not implemented');
+display('pause button not implemented yet');
 
 % --- Executes on button press in btn_reset.
 function btn_reset_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_reset (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global state_on;
 display('btn_RESET');
-set(handles.ind_status,'String','RESETTING');
-set(handles.ind_status,'ForegroundColor',[0.8 0.5 0]);
-% UserInterface_OpeningFcn(hObject, eventdata, handles, varargin)
 reset=questdlg('Do you really want to reset the interface?!','Reset','Cancel','Reset','Cancel');
 if strcmp(reset,'Cancel')
     display('RESET cancelled');
     return
 end
-display('RESETTING');
+display('RESET!');
 UserInterface_OpeningFcn(findobj('Tag','fig_GUI'),eventdata,handles);
 
 % --- Executes on button press in btn_exit.
@@ -886,13 +500,9 @@ function btn_exit_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_exit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global state_on;
-global check_sum;
-set(handles.ind_status,'String','EXITING');
-set(handles.ind_status,'ForegroundColor',[1 0 0]);
-state_on=-1;
-check_sum=0;
-btn_on_Callback(findobj('Tag','btn_on'),eventdata,handles);
+set(handles.ind_error,'string','Warning: exit button not implemented');
+display('exit button not implemented yet');
+
 
 %%%%%%%%%%%%%%%%% SETTING VALUES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -913,7 +523,7 @@ else
     setappdata(0,'centerx',check); % Update value in appdata
     time=calcTime();
     time_txt=strcat(num2str(floor(time/60)),' min, ',num2str(round(time-floor(time/60)*60)),' sec');
-    set(handles.ind_time,'String',num2str(time_txt));
+    set(handles.ind_time_min,'String',num2str(time_txt));
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white
@@ -936,7 +546,7 @@ else
     setappdata(0,'centery',check); % Update value in appdata
     time=calcTime();
     time_txt=strcat(num2str(floor(time/60)),' min, ',num2str(round(time-floor(time/60)*60)),' sec');
-    set(handles.ind_time,'String',num2str(time_txt));
+    set(handles.ind_time_min,'String',num2str(time_txt));
     set(hObject,'backgroundColor',[0 .5 0]);% grey
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white
@@ -959,7 +569,7 @@ else
     setappdata(0,'diameter',check); % Update value in appdata
     time=calcTime();
     time_txt=strcat(num2str(floor(time/60)),' min, ',num2str(round(time-floor(time/60)*60)),' sec');
-    set(handles.ind_time,'String',num2str(time_txt));
+    set(handles.ind_time_min,'String',num2str(time_txt));
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white
@@ -982,7 +592,7 @@ else
     setappdata(0,'loops',check); % Update value in appdata
     time=calcTime();
     time_txt=strcat(num2str(floor(time/60)),' min, ',num2str(round(time-floor(time/60)*60)),' sec');
-    set(handles.ind_time,'String',num2str(time_txt));
+    set(handles.ind_time_min,'String',num2str(time_txt));
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white
@@ -1005,7 +615,7 @@ else
     setappdata(0,'delay',check); % Update value in appdata
     time=calcTime();
     time_txt=strcat(num2str(floor(time/60)),' min, ',num2str(round(time-floor(time/60)*60)),' sec');
-    set(handles.ind_time,'String',num2str(time_txt));
+    set(handles.ind_time_min,'String',num2str(time_txt));
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white
@@ -1429,4 +1039,73 @@ function slider3_CreateFcn(hObject, eventdata, handles)
 % Hint: slider controls usually have a light gray background.
 if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+
+function val_curr_cycle_Callback(hObject, eventdata, handles)
+% hObject    handle to val_curr_cycle (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of val_curr_cycle as text
+%        str2double(get(hObject,'String')) returns contents of val_curr_cycle as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function val_curr_cycle_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to val_curr_cycle (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function val_tot_cycle_Callback(hObject, eventdata, handles)
+% hObject    handle to val_tot_cycle (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of val_tot_cycle as text
+%        str2double(get(hObject,'String')) returns contents of val_tot_cycle as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function val_tot_cycle_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to val_tot_cycle (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function val_tot_acc_Callback(hObject, eventdata, handles)
+% hObject    handle to val_tot_acc (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of val_tot_acc as text
+%        str2double(get(hObject,'String')) returns contents of val_tot_acc as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function val_tot_acc_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to val_tot_acc (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
 end
