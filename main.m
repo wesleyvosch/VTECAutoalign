@@ -15,6 +15,7 @@ function [action,changes]=main(state)
 %             kwnown parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global counter;
+global state_on;
 display('MAIN');
 % get input values from Simulink
 changes=-1;
@@ -84,11 +85,13 @@ switch state
             % start position unchanged
             display('MAIN: build, search');
             set_param(on_obj{1},'Value','2'); % simulink -> run: search fcn
+            state_on=2;
             changes=0;
         else
             % start position changed
             display('MAIN: build, move');
             set_param(on_obj{1},'Value','1'); % simulink -> run: move fcn
+            state_on=1;
             changes=1;
         end
         
@@ -102,8 +105,12 @@ switch state
         set_param(on_obj{1},'Value','0');
         % start building simulink
         if strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')
-            display('MAIN: BUILD, start ');
+            display('MAIN: BUILD, start');
             set_param('Autoalign_system','SimulationCommand','start');
+        else
+            display('MAIN: BUILD, sim still running');
+            set(handles.ind_error,'string','Unable to build, simulation is still running');
+            action='stopped';
         end
     case 2 % run (move or search)
         % update parameters
@@ -117,6 +124,7 @@ switch state
             % search mode
             display('MAIN: run search');
             set_param(on_obj{1},'Value','2'); % simulink -> run: search fcn
+            set_param('Autoalign_system','SimulationCommand','start');
 %             if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
 %                 set_param('Autoalign_system','SimulationCommand','continue');
 %             end
@@ -125,9 +133,10 @@ switch state
             display('MAIN: run move');
             % move mode
             set_param(on_obj{1},'Value','1'); % simulink -> run: move fcn
-            if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
-                set_param('Autoalign_system','SimulationCommand','continue');
-            end
+            set_param('Autoalign_system','SimulationCommand','start');
+%             if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
+%                 set_param('Autoalign_system','SimulationCommand','continue');
+%             end
             changes=1;
         end
     case 3 % Pause 
@@ -168,76 +177,46 @@ end
 if state==3
     display('skip while,paused');
     state=4;
+    set_param('Autoalign_system', 'SimulationCommand', 'Pause');
     action='paused';
     return;
 end
 if state==2
+    display('resetting counter');
     counter=0; % reset when running (not when pausing, etc.)
-    display(cnt_time);
 end
 
 display('start while...');
-while counter<cnt_time
+display(get_param('Autoalign_system','SimulationStatus'));
+display(state);
+
+while strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')==0
     % check for pause command
-    if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
-        display('MAIN: while detected paused state');
+    if counter>cnt_time||state==-1
+        display('MAIN: while, descrepency detected!');
         break;
     end
-%     set_param('Autoalign_system', 'SimulationCommand', 'Pause');
     pause(.1);
-   % check for pause request
-   if getappdata(0,'setpause')>0
-       display('MAIN: while detected setpause (appdata)');
-        break;
-   end
+    display(counter);
+    counter=counter+1;
+
+%    if getappdata(0,'setpause')>0
+%        display('MAIN: while detected setpause (appdata)');
+%         break;
+%    end
 %    if sum(getappdata(0,'finish'))>0
 %        display('MAIN: while detected finish (appdata)');
 %         break;
 %    end
 %    set_param('Autoalign_system', 'SimulationCommand', 'continue');
-    % check for stop command
-    if state==-1
-        display('MAIN: while detected stop command');
-        break;
-    end
-    display(counter);
-    counter=counter+1;
-%     pause(0.1);
 end
-
-
-% while strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')==0
-% %     set_param('Autoalign_system', 'SimulationCommand', 'WriteDataLogs');
-% %     pause(0.1);
-% %     if getappdata(0,'setpause')>0
-% %         display('MAIN: break, pause request');
-% %         break;
-% %     end
-% %     set_param('Autoalign_system', 'SimulationCommand', 'continue');
-%     if getappdata(0,'setpause')>0
-%         display('MAIN: while detected paused request');
-%         break;
-%     end
-%     if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
-%         display('MAIN: while detected paused state');
-%         break;
-%     end
-%     if state==-1||cnt>cnt_time
-%         display('MAIN: while detected stop command or time limit');
-%         break;
-%     end
-%     % Simuling is running
-%     display('.');
-%     cnt=cnt+1;
-%     pause(0.1);
-% end
 
 display('MAIN: end while');
 display(counter);
-display('MAIN: sum setpause=');
-display(sum(getappdata(0,'setpause')));
-display('MAIN: sum of finish=');
-display(sum(getappdata(0,'finish')));
+% display('MAIN: sum setpause=');
+% display(sum(getappdata(0,'setpause')));
+% display('MAIN: sum of finish=');
+% display(sum(getappdata(0,'finish')));
 % display('MAIN: length of finish=');
 % display(length(getappdata(0,'finish')));
 if counter>cnt_time
@@ -246,21 +225,23 @@ if counter>cnt_time
     changes=0;
     return;
 end
-if getappdata(0,'setpause')~=0
-    display('MAIN: handle pause request');
-    changes=0;
-    switch getappdata(0,'setpause')
-        case 1
-            action='finished';
-        case 2
-            action='moved';
-        case 3
-            action='paused';
-        otherwise
-            action='stopped';
-    end
-    return;
-end
+display(state);
+
+% if getappdata(0,'setpause')~=0
+%     display('MAIN: handle pause request');
+%     changes=0;
+%     switch getappdata(0,'setpause')
+%         case 1
+%             action='finished';
+%         case 2
+%             action='moved';
+%         case 3
+%             action='paused';
+%         otherwise
+%             action='stopped';
+%     end
+%     return;
+% end
 
 switch state
     case -1 % exit
@@ -273,13 +254,6 @@ switch state
 %         set_param('Autoalign_system','SimulationCommand','start');
         changes=0;
         action='stopped';
-    case 1% build
-        display('MAIN: show:build');
-%         set_param(on_obj{1},'Value','0'); % simulink -> idle
-%         set_param('Autoalign_system','SimulationCommand','start');
-        changes=0;
-        action='build';
-        return;
     case 2% run
         if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
             display('MAIN: show:pause');

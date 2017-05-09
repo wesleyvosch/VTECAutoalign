@@ -71,7 +71,7 @@ guidata(hObject, handles);
 global state_on;
 global connected;
 global check_sum;
-load_system('Autoalign_system.mdl');
+load_system('Autoalign_system.slx');
 % set_param('Autoalign_system','SimulationMode','external');
 %% %% %% %% %% INITIALIZATION %% %% %% %% %%
 
@@ -120,6 +120,9 @@ if isappdata(0,'Pmax_time')
 end
 if isappdata(0,'setpause')
     rmappdata(0,'setpause');
+end
+if isappdata(0,'finish')
+    rmappdata(0,'finish');
 end
 
 % set values for elements in Settings panel
@@ -248,7 +251,7 @@ function btn_connect_Callback(hObject, eventdata, handles)
 global connected;
 global state_on;
 global check_sum;
-display('btn_C');
+display('btn_Connect');
 display(connected);
 
 % disable inputs & buttons
@@ -264,7 +267,7 @@ set(handles.btn_export,'Enable','off');
 
 switch connected
     case -1 % debug mode
-        display('btn_C: debug mode');
+        display('btn_Connect: debug mode');
         set(handles.btn_connect,'string','Debug');
         set(handles.ind_sim,'String','ON');
         set(handles.ind_status,'String','DEBUGGING');
@@ -292,11 +295,11 @@ switch connected
         % checksum 
         if check_sum==1
             % already build, only connecting required
-            display('already build');
+            display('btn_Connect: already build');
             [result,changes]=main(0);
-            display('btn_C: simulink mode set to 0 (idle)');
+            display('btn_Connect: simulink mode set to 0 (idle)');
             set_param('Autoalign_system','SimulationCommand','Connect');
-            display('btn_C: connected');
+            display('btn_Connect: connected');
             set(handles.ind_sim,'String','ON');
             set(handles.ind_status,'String','CONNECTED');
             set(handles.ind_status,'ForegroundColor',[0 0.5 0.5]);
@@ -333,7 +336,7 @@ switch connected
             set(handles.btn_connect,'String','Disconnect');
         end
     case 1 % Disconnecting
-        display('btn_C: disconnecting');
+        display('btn_Connect: disconnecting');
         set(handles.ind_status,'String','STOPPING');
         set(handles.ind_status,'foregroundcolor',[0 0.44 0.75]);
         state_on=0;
@@ -354,7 +357,7 @@ switch connected
 end
 switch result
     case 'build'
-        display('btn_C: result=build');
+        display('btn_Connect: result=build');
        % enable inputs
         set(handles.val_centerx,'Enable','on');
         set(handles.val_centery,'Enable','on');
@@ -368,9 +371,9 @@ switch result
         set(handles.btn_on,'String','Run');
         set(handles.btn_connect,'Enable','on');
         set(handles.btn_connect,'String','Disconnect');
-        state_on=1;
+%         state_on=1;
     case 'stopped'
-        display('btn_C: result=stopped');
+        display('btn_Connect: result=stopped');
         set(handles.ind_status,'String','DISCONNECTING');
         set(handles.ind_status,'foregroundcolor',[0 0.44 0.75]);
         set_param('Autoalign_system','SimulationCommand','Disconnect');
@@ -390,7 +393,7 @@ switch result
         set(handles.btn_connect,'Enable','on');
         set(handles.btn_connect,'String','Connect');
     otherwise
-        display('btn_C: result=unknown');
+        display('btn_Connect: result=unknown');
         return;
 end
 
@@ -405,7 +408,7 @@ global connected;
 global cx;
 global cy;
 global diam;
-display('btn_O');
+display('btn_ON');
 display(state_on);
 % disable inputs & buttons
 set(handles.val_centerx,'Enable','off');
@@ -421,28 +424,28 @@ set(handles.ind_error,'String','');
 
 switch state_on
     case -1 % EXIT
-        display('btn_O: EXIT');
+        display('btn_ON: EXIT');
         state_on=-1;
         [result,changes]=main(-1);
     case 0 % IDLE mode
-        display('btn_O: IDLE');
+        display('btn_ON: IDLE');
         set(handles.ind_status,'String','STOPPING');
         set(handles.ind_status,'foregroundColor',[1 0 0]);
         state_on=0;
         [result,changes]=main(0);
     case 1 % MOVE mode
-        display('btn_O: moving');
+        display('btn_ON: moving');
         time=getappdata(0,'approx_time');
         time_txt=strcat(num2str(floor(time/60)),' min, ',num2str(floor(time-floor(time/60)*60)),' sec');
         set(handles.ind_time,'String',time_txt);
         set(handles.btn_on,'String','Pause');
         set(handles.btn_on,'Enable','on');
-        set(handles.ind_status,'String','Moving');
+        set(handles.ind_status,'String','REPOSITIONING');
         set(handles.ind_status,'ForegroundColor',[0 0.5 0.5]);
         state_on=3;
         [result,changes]=main(2);
     case 2 % SEARCH mode
-        display('btn_O: searching');
+        display('btn_ON: searching');
         time=getappdata(0,'approx_time');
         time_txt=strcat(num2str(floor(time/60)),'m ',num2str(round(time-floor(time/60)*60)),'s');
         set(handles.val_time,'String',time_txt);
@@ -453,24 +456,24 @@ switch state_on
         state_on=3;
         [result,changes]=main(2);
     case 3 % PAUSE simulation
-        display('btn_O: pausing');
+        display('btn_ON: pausing');
         set(handles.ind_status,'String','PAUSING');
         set(handles.ind_status,'ForegroundColor',[0 0.75 0]);
         state_on=4;
         [result,changes]=main(3);
     case 4 % UNPAUSE simulation
-        display('btn_O: unpausing');
+        display('btn_ON: unpausing');
         set(handles.btn_on,'String','Pause');
         set(handles.btn_on,'Enable','on');
         state_on=3;
         [result,changes]=main(4);
     otherwise
-        display('btn_O: unknown state');
+        display('btn_ON: unknown state');
         return;
 end
 switch result
     case 'stopped'
-        display('btn_O: result=stopped');
+        display('btn_ON: result=stopped');
         state_on=1;
         connected=1;
         % enable inputs
@@ -489,7 +492,7 @@ switch result
         set(handles.ind_status,'Foregroundcolor',[0.5 0 0]);
         return;
     case 'finished'
-        display('btn_O: result=finished');
+        display('btn_ON: result=finished');
         state_on=1;
         connected=1;
         % enable inputs
@@ -507,13 +510,13 @@ switch result
         set(handles.ind_status,'String','FINISHED');
         set(handles.ind_status,'Foregroundcolor',[0 1 0]);
     case 'moved'
-        display('btn_O: result=moved');
+        display('btn_ON: result=moved');
         set(handles.ind_status,'String','MOVED');
         set(handles.ind_status,'ForegroundColor',[0 0.5 0.25]);
         state_on=3;
         return;
     case 'paused'
-        display('btn_O: result=paused');
+        display('btn_ON: result=paused');
         set(handles.val_centerx,'Enable','on');
         set(handles.val_centery,'Enable','on');
         set(handles.val_diameter,'Enable','on');
@@ -528,14 +531,14 @@ switch result
         set(handles.btn_export,'Enable','on');
         state_on=4;
     case 'unpaused'
-        display('btn_O: result=unpaused');
+        display('btn_ON: result=unpaused');
         if changes==0 % resume
             display('btn_O: no changes, resuming');
             set(handles.ind_status,'String','RESUMING');
             set(handles.ind_status,'ForegroundColor',[0 1 0]);
             state_on=3;
         else % restart
-            display('btn_O: changes, restarting');
+            display('btn_ON: changes, restarting');
             set(handles.ind_status,'String','RESTARTING');
             set(handles.ind_status,'ForegroundColor',[0.78 0.35 0.07]);
             state_on=2;
@@ -543,7 +546,7 @@ switch result
         end
         return;
     case 'time'
-        display('btn_O: result=time');
+        display('btn_ON: result=time');
         state_on=1;
         % enable inputs
         set(handles.val_centerx,'Enable','on');
@@ -559,7 +562,7 @@ switch result
         set(handles.ind_error,'String','Simulation time limit reached!');
         return;
      case 'exit'
-        display('btn_O: result=exit');
+        display('btn_ON: result=exit');
         state_on=0;
         connected=0;
         % enable inputs
@@ -580,16 +583,16 @@ switch result
         set(handles.ind_sim,'ForegroundColor',[0 0 0]);
         return;
     otherwise
-        display('btn_O: result=unknown');
+        display('btn_ON: result=unknown');
         return;
 end
-display('btn_O: check data');
+display('btn_ON: check data');
 % check output data
 if ~isappdata(0,'x_data')||~isappdata(0,'y_data')||~isappdata(0,'p_data')...
         ||~isappdata(0,'clk')||~isappdata(0,'centerx')||~isappdata(0,'centery')...
         ||~isappdata(0,'diameter')||~isappdata(0,'loops')
     set(handles.ind_error,'String','Unable to load output data');
-    display('btn_O: data not good');
+    display('btn_ON: data not good, skip rest');
     return;
 end
 set(handles.ind_status,'String','PLOTTING');
@@ -611,10 +614,10 @@ set(handles.val_acc,'String',acc);
 if length(xdev)<length(ydev)
     %add zero's to xdev
     xdev(numel(ydev))=0;
-    display('btn_O: x < y');
+    display('btn_ON: x < y');
 elseif length(xdev)>length(ydev)
     %add zero's to ydev
-    display('btn_O: x > y');
+    display('btn_ON: x > y');
     ydev(numel(xdev))=0;
 end
 
@@ -639,10 +642,10 @@ for item=1:length(part)
 end
 % xnew(:,1)=xpos(:,1)+(centerx-diameter/(4*loops-2));
 % ynew(:,1)=ypos(:,1)+(centery-diameter/(4*loops-2));
-display(factor);
+% display(factor);
 
 % plot location
-display('btn_O: plot location...');
+display('btn_ON: plot location...');
 set(handles.val_xmin,'String',num2str(round(min(xnew))));
 set(handles.val_xmax,'String',num2str(round(max(xnew))));
 set(handles.val_ymin,'String',num2str(round(min(ynew))));
@@ -656,31 +659,31 @@ xmaxval=centerx+diameter/2+(diameter/(4*loops-2));
 yminval=centery-diameter/2-(diameter/(4*loops-2));
 ymaxval=centery+diameter/2+(diameter/(4*loops-2));
 if sign(xminval)==-1
-    display('xmin is negative');
+    display('btn_ON: xmin is negative');
     xmin=-ceil(-xminval/5)*5;
 else
-    display('xmin is positive');
+    display('btn_ON: xmin is positive');
     xmin=ceil(xminval/5)*5;
 end
 if sign(xmaxval)==-1
-    display('xmax is negative');
+    display('btn_ON: xmax is negative');
     xmax=-ceil(-xmaxval/5)*5;
 else
-    display('xmax is positive');
+    display('btn_ON: xmax is positive');
     xmax=ceil(xmaxval/5)*5;
 end
 if sign(yminval)==-1
-    display('ymin is negative');
+    display('btn_ON: ymin is negative');
     ymin=-ceil(-yminval/5)*5;
 else
-    display('ymin is positive');
+    display('btn_ON: ymin is positive');
     ymin=ceil(yminval/5)*5;
 end
 if sign(ymaxval)==-1
-    display('ymax is negative');
+    display('btn_ON: ymax is negative');
     ymax=-ceil(-ymaxval/5)*5;
 else
-    display('ymax is positive');
+    display('btn_ON: ymax is positive');
     ymax=ceil(ymaxval/5)*5;
 end
 % xmin=ceil((centerx-diameter/2-(diameter/(4*loops-2)))/5)*5;
@@ -689,17 +692,17 @@ end
 % ymax=ceil((centery+diameter/2+(diameter/(4*loops-2)))/5)*5;
 
 
-display(centerx);
-display(centery);
-display(diameter);
-display(loops);
+% display(centerx);
+% display(centery);
+% display(diameter);
+% display(loops);
 % display('xmin=centerx-diameter/2-(diameter/(4*loops-2))');
 % display('xmax=centerx+diameter/2+(diameter/(4*loops-2))');
 
-display(xmin);
-display(xmax);
-display(ymin);
-display(ymax);
+% display(xmin);
+% display(xmax);
+% display(ymin);
+% display(ymax);
 
 plot(handles.plt_pos,xnew,ynew);
 axis(handles.plt_pos,[xmin xmax ymin ymax]);
@@ -713,10 +716,10 @@ minright=min(xmin,ymin);
 maxright=max(xmax,ymax);
 tmin=0;
 tmax=max(t)*1.05;
-display(minright);
-display(maxright);
-display(tmin);
-display(tmax);
+% display(minright);
+% display(maxright);
+% display(tmin);
+% display(tmax);
 display(min(p));
 display(max(p));
 
@@ -728,20 +731,20 @@ else
     pmin=min(p)*0.9;
     pmax=max(p)*1.1;
 end
-display(pmin);
-display(pmax);
+% display(pmin);
+% display(pmax);
 tmaxx=tmax*1.1;
 % title(handles.plt_time,'Data in time domain');
 % xlabel(handles.plt_time,'Time [seconds]');
 xlim(handles.plt_time,[tmin tmaxx]);
 % plot P(t) (left)
 yyaxis(handles.plt_time,'left');
-display('btn_O: plot time (L)');
+display('btn_ON: plot time (L)');
 plot(handles.plt_time,t,xnew,'b',t,ynew,'m');
 ylim(handles.plt_time,[minright maxright]);
 % plot X&Y(t) (right)
 yyaxis(handles.plt_time,'right');
-display('btn_O: plot time (R)');
+display('btn_ON: plot time (R)');
 plot(handles.plt_time,t,p,'r');
 ylim(handles.plt_time,[pmin pmax]);
 ylabel(handles.plt_time,'Power [uW]');
@@ -753,7 +756,7 @@ legend(handles.plt_time,'X position','Y position','Power');
 set(handles.ind_sim,'String','OFF');
 set(handles.ind_sim,'ForegroundColor',[0 0 0]); % black
 
-display('btn_O: find highest power');
+display('btn_ON: find highest power');
 % find highest power area
 max_p=max(p);
 trigminp=max_p*0.9;
@@ -788,6 +791,7 @@ set(handles.ind_status,'String','IDLE');
 set(handles.ind_status,'ForegroundColor',[0.5 0.5 0.5]);
 set(handles.ind_sim,'String','OFF');
 set(handles.ind_sim,'ForegroundColor',[0 0 0]);
+display('btn_ON: END');
 
 % --- Executes on button press in btn_export.
 function btn_export_Callback(hObject, eventdata, handles)
