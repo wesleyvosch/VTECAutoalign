@@ -382,36 +382,10 @@ grid(handles.plt_time,'minor');
 legend(handles.plt_time,'X position','Y position','Power','Loopnr.','Cyclenr.');
 
 % display highest power
-% =====> TO DO <=====
+
+
+% save to file
 display('BTN_ON: highest power not included');
-
-% if dosave == 1
-%     display('BTN_ON: saving data...');
-%     % save to file
-%     header={'Timestamp','Cycle','Loop','X position','Y position','Power'};
-%     data=[time,cycle_nr,loop_nr,xpos,ypos,power];
-%     [f,fname,fext]=fileparts(save_loc);
-%     ext=lower(fext); % make sure text is lower case
-%     switch ext
-%         case {'.xlsx','.xls'}
-%             display('BTN_ON: save as Excel');
-%             % save as Excel file
-%             xlswrite(save_loc,header,'Sheet1','A1');
-%             xlswrite(save_loc,data,'Sheet1','A2');
-%         case {'.csv','.txt'}
-%             display('BTN_ON: save as csv or txt');
-%             % save as CSV-file or TXT file
-%             data_table=table(data);
-%             writetable(data_table,save_loc,'WriteVariableNames',1);
-%         otherwise
-%             display('BTN_ON: unknown format, saving as Excel');
-%             % unknown extension, save as Excel file
-%             ext='.xlsx';
-%             xlswrite(save_loc,header,'Sheet1','A1');
-%             xlswrite(save_loc,data,'Sheet1','A2');
-%     end 
-% end
-
 if dosave==1
     [f,fname,fext]=fileparts(save_loc);
     ext=lower(fext); % make sure text is lower case
