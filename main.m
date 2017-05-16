@@ -98,6 +98,7 @@ while strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')==0&&...
         display('MAIN: Time limit reached!');
         break;
     end
+%     if get_param('Autoalign_system/','SimulationStatus'),'paused')
     pause(.1);
     counter=counter+1;
 end

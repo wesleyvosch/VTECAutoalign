@@ -275,37 +275,54 @@ if mode == 0 % now: idle | next: run
     set(handles.val_scale,'Enable','off');
     set(handles.btn_on,'Enable','off');
 
-    % ask for save
+    % save request
     set(handles.ind_status,'String','WAITING');
     save_request=questdlg('Would you like to save the generated data?',...
         'Save data?','Yes','No','Yes');
     if strcmp(save_request,'Yes')
         display('BTN_ON: save request accepted');
-        % show save menu
-        dosave=1;
+        % handle save request
         [filename,pathname]=uiputfile({'*.xlsx','Excel-Workbook';...
             '*.csv','CSV (Comma-Seperated Value)';...
             '*.txt','Text Document';'*.*','All Files'}...
             ,'Save location','Alignment Data.xlsx');
         if isequal(filename,0)||isequal(pathname,0)
             display('BTN_ON: save menu canceled');
-            % check for cancel
-            return;
+            % save canceled
+            dosave=0;
+        else
+            display('BTN_ON: save location found');
+            [f,fname,fext]=fileparts(filename);
+            save_loc=fullfile(pathname,[fname,fext]);
+            ext=lower(fext); % make sure text is lower case
+            switch ext
+                case {'.xlsx','.xls'}
+                    display('BTN_ON: save as Excel');
+                    % save as Excel file
+                    dosave=1;
+                case {'.csv','.txt'}
+                    display('BTN_ON: save as csv or txt');
+                    % save as CSV-file or TXT file
+                    dosave=2;
+                otherwise
+                    display('BTN_ON: unknown format, saving as Excel');
+                    % unknown extension, save as Excel file
+                    dosave=1;
+            end 
         end
-        display('BTN_ON: save location found');
-        [f,fname,fext]=fileparts(filename);
-        save_loc=fullfile(pathname,[fname,fext]);
     else
+        % save request denied
         display('BTN_ON: save request denied');
         dosave=0;
     end
     
+    % prepare for simulation
     set(handles.ind_status,'String','PREPARING');
     [time_min,time_sec]=calcTime();
     set(handles.ind_time_min,'String',num2str(time_min));
     set(handles.ind_time_sec,'String',num2str(time_sec));
     
-    % run sim
+    % run simulation
     set(handles.ind_sim,'String','ON');
     display('BTN_ON: main(0)');
     main(0);
@@ -330,12 +347,12 @@ set(handles.val_delay,'Enable','on');
 set(handles.val_tRead,'Enable','on');
 set(handles.val_tot_acc,'Enable','on');
 set(handles.val_scale,'Enable','on');
-
-% receive generated data
+% receive data
 if ~isappdata(0,'x_data')||~isappdata(0,'y_data')||...
         ~isappdata(0,'p_data')||~isappdata(0,'t_data')||...
-        ~isappdata(0,'loopnr')||~isappdata(0,'cyclenr')
-    % error while loading data
+        ~isappdata(0,'loopnr')||~isappdata(0,'cyclenr')||...
+        ~isappdata(0,'xmax')||~isappdata(0,'ymax')
+    % error loading data
     display('BTN_ON: error while loading data');
     return;
 end
@@ -346,15 +363,34 @@ power=getappdata(0,'p_data');
 time=getappdata(0,'t_data');
 loop_nr=getappdata(0,'loopnr');
 cycle_nr=getappdata(0,'cyclenr');
+xmax=getappdata(0,'xmax');
+ymax=getappdata(0,'ymax');
+pmax=getappdata(0,'pmax');
+tot_acc=getappdata(0,'tot_acc');
+acc=getappdata(0,'acc');
+centerx=get(handles.val_centerx,'string');
+centery=get(handles.val_centery,'string');
+diameter=get(handles.val_diameter,'string');
+delay=get(handles.val_delay,'string');
+tRead=get(handles.val_tRead,'string');
+scale=get(handles.val_scale,'string');
 
-display('BTN_ON: plot position');
+% display highest power
+for item=1:max(cycle_nr)
+    max_p=pmax(find(cycle_nr==item,1),1);
+    max_x=xmax(find(cycle_nr==item,1),1);
+    max_y=ymax(find(cycle_nr==item,1),1);
+end
+
 % position plot
-plot(handles.plt_pos,xpos,ypos);
+display('BTN_ON: plot position');
+plot(handles.plt_pos,xpos,ypos,max_x,max_y,'ro','markersize',10);
+% plot(handles.plt_pos,);
 axis(handles.plt_pos,[min(xpos) max(xpos) min(ypos) max(ypos)]);
 grid(handles.plt_pos,'on');
 grid(handles.plt_pos,'minor');
-
 display('BTN_ON: plot time');
+
 % time plot
 % calculate relative position
 offsetx=min(xpos)+(max(xpos)-min(xpos))/2;
@@ -381,14 +417,71 @@ grid(handles.plt_time,'minor');
 
 legend(handles.plt_time,'X position','Y position','Power','Loopnr.','Cyclenr.');
 
-% display highest power
-
+% hold off;
+% max_p=max(power);
+% max_x=unique(xmax);
+% max_y=unique(ymax);
+% max_t=time(find(power,max_p),1);
+set(handles.val_Pmax,'string',num2str(round(max(max_p))));
+set(handles.val_Pxmax,'string',num2str(round(max_x(find(max_p,1),1))));
+set(handles.val_Pymax,'string',num2str(round(max_y(find(max_p,1),1))));
 
 % save to file
-display('BTN_ON: highest power not included');
+set(handles.ind_sim,'String','BUSY');
+set(handles.ind_status,'String','SAVING');
+% switch dosave
+%     case 1 % save as excel map
+%         display('save data in Excel');
+%         [f,fname,fext]=fileparts(save_loc);
+%         % generate summary tab
+%         center_data=strcat('X= ',centerx,' um, Y= ',centery,' um');
+%         diameter_data=strcat(diameter,' um');
+%         delay_data=strcat(delay,' samples');
+%         read_data=strcat(tRead,' samples');
+%         range_data=strcat('(',min(xpos),' | ',min(ypos),' um) X (',...
+%             max(xpos),' | ',max(ypos),' um)');
+%         acc_data=strcat(acc,' nm / ',tot_acc,' nm');
+%         time_min=floor(time/60);
+%         time_sec=time-time_min*60;
+%         time_data=strcat(time_min,' minutes, ',time_sec,' seconds');
+%         param_data={'Parameters',''; 'Center',center_data;...
+%             'Diameter',diameter_data; 'Loops',max(loop_nr);...
+%             'Cycles', max(cycle_nr); 'Scale',scale;'Delay time',...
+%             delay_data;'read_time',read_data;...
+%             'accuracy [achieved/required',acc_data;...
+%             'Sample frequency','800 Hz'; 'Range',range_data...
+%             'Elapsed time',time_data};
+%         xlswrite(save_loc,param_data,'Summary','A1');
+%         % generate cycle tabs
+%         header={'Time','Loopnr','X position','Y position','Power'};
+%         data=[time,loop_nr,xpos,ypos,power];
+%         xlswrite(save_loc,header,'raw_data','A1');
+%         xlswrite(save_loc,data,'raw_data','A2');
+%         for cnt=1:max(cycle_nr)
+%             elementnr=find(cycle_nr==cnt);
+%             sheet_name=strcat('Cycle',num2str(cnt));
+%             xlswrite(save_loc,header,sheet_name,'A1');
+%             xlswrite(save_loc,data(elementnr,:),sheet_name,'A2');
+%         end
+%     case 2 % save as CSV file
+%         display('save data in CSV');
+%         [f,fname,fext]=fileparts(save_loc);
+%         
+%     otherwise % no save
+%         display('dont save data');
+%         
+% end
+
+
+
+
 if dosave==1
+    set(handles.ind_sim,'String','BUSY');
+    set(handles.ind_status,'String','SAVING');
     [f,fname,fext]=fileparts(save_loc);
-    ext=lower(fext); % make sure text is lower case
+    
+    
+    % plot data
     header={'Timestamp','Loop','X position','Y position','Power'};
     data=[time,loop_nr,xpos,ypos,power];
     cnt_cycles=max(cycle_nr);
@@ -418,7 +511,7 @@ if dosave==1
     end
 end
 
-
+set(handles.ind_sim,'String','OFF');
 set(handles.ind_status,'String','IDLE');
 display('BTN_ON: END');
 
