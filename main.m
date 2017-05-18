@@ -1,6 +1,6 @@
 function main(state)
-display('MAIN: started');
-
+global counter;
+global changes;
 % get input handles of Simulink model
 mode_obj=find_system('Autoalign_system','BlockType','Constant','Name','mode');
 centerx_obj=find_system('Autoalign_system','BlockType','Constant','Name','center_x');
@@ -38,9 +38,10 @@ cycles_str=num2str(cycles);
 delay_str=num2str(delay);
 read_time_str=num2str(read_time);
 
+[min,sec]=calcTime();
+cnt_time=50*(min*60+sec);
 switch state
     case 0 % Build
-        display('MAIN: Build');
         % update values
         set_param(centerx_obj{1},'Value',centerx_str);
         set_param(centery_obj{1},'Value',centery_str);
@@ -53,29 +54,25 @@ switch state
         set_param('Autoalign_system','SimulationCommand','start');
         return;
     case 1 % Run
-        display('MAIN: Run');
+        beep; % notify user with beep-sound (TEMP)
         set_param(mode_obj{1},'Value','1'); % simulink -> run
-%         set_param('Autoalign_system','SimulationCommand','start');
-        display('MAIN: Run, after start command');
-        % define time limit
-        [min,sec]=calcTime();
-        cnt_time=50*(min*60+sec);
         counter=0; % reset counter
     case 2 % Pause
-        display('MAIN: Pause');
         set_param(mode_obj{1},'Value','2'); % simulink -> pause
     case 3 % Unpause
-        display('MAIN: Unpause');
         set_param(mode_obj{1},'Value','1'); % simulink -> run
         if centerx==centerx_sim && centery==centery_sim &&...
                 diameter==diameter_sim && loops==loops_sim &&...
                 cycles==cycles_sim && delay==delay_sim && read_time==read_time_sim
-            % no changes
-            display('MAIN: Unpause, No changes');
+            % no changes, continue
+            display('MAIN: pause, no changes');
+            set_param('Autoalign_system','SimulationCommand','continue');
+            changes=0;
         else
-            display('MAIN: Unpause, Changes');
-            main(1);
-            % something changed
+            % changes, restart
+            counter=0;
+            changes=1;
+            set_param('Autoalign_system','SimulationCommand','stop');
             % update values
             centerx_sim =centerx;
             centery_sim =centery;
@@ -84,31 +81,38 @@ switch state
             cycles_sim=cycles;
             delay_sim =delay;
             read_time_sim=read_time;
+%             main(0); % re-build
+%             main(1); % re-run
+        end
+    case -1 % stop
+        if strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')
+            % simulink paused, order stop with command
             set_param('Autoalign_system','SimulationCommand','stop');
+        else
+            % simulink running, order stop in simulink
+            set_param(mode_obj{1},'Value','-1'); % simulink -> stop
         end
     otherwise
-        display('MAIN: unknown mode');
         % do nothing
 end
 
-display('MAIN: Starting while...');
 while strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')==0&&...
         strcmp(get_param('Autoalign_system','SimulationStatus'),'paused')==0
+    if state==2 % pause
+        set_param('Autoalign_system','SimulationCommand','pause');
+%         break;
+    end
     if counter>cnt_time
-        display('MAIN: Time limit reached!');
         break;
     end
 %     if get_param('Autoalign_system/','SimulationStatus'),'paused')
     pause(.1);
     counter=counter+1;
 end
-if state==2
-    display('MAIN: end while, unpause state');
+if state==3
     if centerx~=centerx_sim || centery~=centery_sim ||...
             diameter~=diameter_sim || loops~=loops_sim ||...
             cycles~=cycles_sim || delay~=delay_sim || read_time~=read_time_sim
-        display('MAIN: end while, Unpause: restart');
         main(0);
     end
 end
-display('MAIN: END');
