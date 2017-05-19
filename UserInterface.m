@@ -31,7 +31,7 @@ function varargout = UserInterface(varargin)
 
 % Edit the above text to modify the response to help UserInterface
 
-% Last Modified by GUIDE v2.5 17-May-2017 14:16:59
+% Last Modified by GUIDE v2.5 18-May-2017 12:15:22
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -85,8 +85,8 @@ set(handles.val_tRead,'String','16');
 set(handles.val_tot_acc,'String','100');
 set(handles.val_scale,'String','2');
 % set(handles.txt_tot_acc_unit,'String','nm');
-% set(handles.ind_time_min,'String','1');
-% set(handles.ind_time_sec,'String','15');
+% set(handles.val_est_time_min,'String','1');
+% set(handles.val_est_time_sec,'String','15');
 
 % enable
 set(handles.val_centerx,'enable','on');
@@ -129,8 +129,8 @@ set(handles.val_Pymin,'String','...');
 set(handles.val_Pymax,'String','...');
 set(handles.val_Ptmin,'String','...');
 set(handles.val_Ptmax,'String','...');
-set(handles.ind_time_min,'String',num2str(floor(t_min)));
-set(handles.ind_time_sec,'String',num2str(ceil(t_sec)));
+set(handles.val_est_time_min,'String',num2str(floor(t_min)));
+set(handles.val_est_time_sec,'String',num2str(ceil(t_sec)));
 
 %% CONTROL PANEL
 % set default values
@@ -153,11 +153,11 @@ set(handles.ind_error,'Foregroundcolor','red');
 
 %% STORAGE
 % declare global variables
-global mode;
+global doPause;
 global dosave;
 global save_loc;
 
-mode=0;
+doPause=0;
 dosave=0;
 save_loc='';
 
@@ -222,14 +222,30 @@ end
 
 setappdata(0,'centerx',0);
 setappdata(0,'centery',0);
-setappdata(0,'diameter',50);
-setappdata(0,'loops',3);
-setappdata(0,'cycles',cycles);
 setappdata(0,'delay',16);
 setappdata(0,'read_time',16);
-setappdata(0,'tot_acc',100);
+% calc cycles & acc
+diameter=50;
+loops=3;
+scale=2;
+tot_acc=100;
+cycles=ceil(1+log(1000*diameter/((2*loops-1)*tot_acc))/log(scale));
+acc=round(1000*diameter*scale^(1-cycles)/(2*loops-1));
+setappdata(0,'diameter',diameter);
+setappdata(0,'loops',loops);
+setappdata(0,'cycles',cycles);
+setappdata(0,'tot_acc',tot_acc);
 setappdata(0,'acc',acc);
-setappdata(0,'scale',2);
+setappdata(0,'scale',scale);
+
+% update time
+[time_min,time_sec]=calcTime();
+% show values
+set(handles.val_acc,'String',num2str(acc));
+set(handles.val_cycles,'String',num2str(cycles));
+set(handles.val_est_time_min,'String',num2str(time_min));
+set(handles.val_est_time_sec,'String',num2str(time_sec));
+
 
 %% PLOTS
 % Default location plot
@@ -273,91 +289,120 @@ function btn_on_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % state=str2double(get(hObject,'Value'));
-global mode;
 global dosave;
 global save_loc;
-display('btn_on active');
+global doPause;
+global changes;
+display('BTN_ON: ...');
 
-if mode == 0 % now: idle | next: run
-    mode=1;
-    % disable inputs
-    set(handles.val_centerx,'Enable','off');
-    set(handles.val_centery,'Enable','off');
-    set(handles.val_diameter,'Enable','off');
-    set(handles.val_loops,'Enable','off');
-    set(handles.val_delay,'Enable','off');
-    set(handles.val_tRead,'Enable','off');
-    set(handles.val_tot_acc,'Enable','off');
-    set(handles.val_scale,'Enable','off');
-    set(handles.btn_on,'Enable','off');
-
-    % save request
-    set(handles.ind_status,'String','WAITING');
-    save_request=questdlg('Would you like to save the generated data?',...
-        'Save data?','Yes','No','Yes');
-    if strcmp(save_request,'Yes')
-        % handle save request
-        [filename,pathname]=uiputfile({'*.xlsx','Excel-Workbook';...
-            '*.csv','CSV (Comma-Seperated Value)';...
-            '*.txt','Text Document';'*.*','All Files'}...
-            ,'Save location','Alignment Data.xlsx');
-        if isequal(filename,0)||isequal(pathname,0)
-            % save canceled
-            set(handles.ind_status,'String','IDLE');
-            mode=0;
-            return;
+% disable inputs
+set(handles.val_centerx,'Enable','off');
+set(handles.val_centery,'Enable','off');
+set(handles.val_diameter,'Enable','off');
+set(handles.val_loops,'Enable','off');
+set(handles.val_delay,'Enable','off');
+set(handles.val_tRead,'Enable','off');
+set(handles.val_tot_acc,'Enable','off');
+set(handles.val_scale,'Enable','off');
+set(handles.btn_on,'Enable','off');
+display(save_loc);
+display(doPause);
+display(dosave);
+if doPause==0
+    if isempty(save_loc)
+        display('BTN_ON: no save location found (doPause=0)');
+        % save request
+        set(handles.ind_status,'String','WAITING');
+        save_request=questdlg('Would you like to save the generated data?',...
+            'Save data?','Yes','No','Yes');
+        if strcmp(save_request,'Yes')
+            % handle save request
+            [filename,pathname]=uiputfile({'*.xlsx','Excel-Workbook';...
+                '*.csv','CSV (Comma-Seperated Value)';...
+                '*.txt','Text Document';'*.*','All Files'}...
+                ,'Save location','Alignment Data.xlsx');
+            if isequal(filename,0)||isequal(pathname,0)
+                % save canceled
+                set(handles.ind_status,'String','IDLE');
+                return;
+            else
+                [f,fname,fext]=fileparts(filename);
+                ext=lower(fext); % make sure text is lower case
+                switch ext
+                    case {'.xlsx','.xls'}
+                        % save as Excel file
+                        dosave=1;
+                    case {'.csv','.txt'}
+                        % save as CSV-file or TXT file
+                        dosave=2;
+                    otherwise
+                        % unknown extension, save as Excel file
+                        fext='.xlsx';
+                        dosave=1;
+                end 
+                save_loc=fullfile(pathname,[fname,fext]);
+            end
         else
-            [f,fname,fext]=fileparts(filename);
-            ext=lower(fext); % make sure text is lower case
-            switch ext
-                case {'.xlsx','.xls'}
-                    % save as Excel file
-                    dosave=1;
-                case {'.csv','.txt'}
-                    % save as CSV-file or TXT file
-                    dosave=2;
-                otherwise
-                    % unknown extension, save as Excel file
-                    fext='.xlsx';
-                    dosave=1;
-            end 
-            save_loc=fullfile(pathname,[fname,fext]);
+            % save request denied
+            dosave=0;
         end
-    else
-        % save request denied
-        dosave=0;
     end
+    display('BTN_ON: start BUILD cycle');
     % prepare for simulation
     set(handles.ind_status,'String','PREPARING');
     [time_min,time_sec]=calcTime();
-    set(handles.ind_time_min,'String',num2str(time_min));
-    set(handles.ind_time_sec,'String',num2str(time_sec));
+    set(handles.val_est_time_min,'String',num2str(time_min));
+    set(handles.val_est_time_sec,'String',num2str(time_sec));
     % run simulation
     set(handles.btn_stop,'Enable','off');
     set(handles.ind_sim,'String','ON');
     main(0);
     % build finished
 end
-if mode ==1 || mode==3
-    set(handles.btn_stop,'Enable','on');
-    set(handles.btn_pause,'Enable','on');
-    set(handles.ind_status,'String','RUNNING');
-    main(1);
-    % run finished
-    if mode==2 % pause mode
+switch doPause
+    case 1 % paused mode, 
+        display('BTN_ON: start PAUSED cycle');
         set(handles.btn_on,'Enable','off');
+        set(handles.btn_stop,'Enable','on');
         set(handles.btn_pause,'Enable','on');
-        set(handles.ind_sim,'String','ON');
+        set(handles.btn_pause,'string','Unpause');
         set(handles.ind_status,'String','PAUSED');
-    else
+        main(3); % go to while immediately
+    case 2 % unpaused mode
+        display('BTN_ON: start UNPAUSED cycle...');
+        if changes==1 % rerun sim
+            display('BTN_ON: ...RESTART cycle');
+            set(handles.btn_on,'Enable','off');
+            set(handles.btn_pause,'Enable','off');
+            set(handles.btn_pause,'string','Pause');
+            set(handles.ind_status,'String','RE-BUILDING');
+            doPause=0;
+            changes=0;
+            btn_on_Callback(hObject, eventdata, handles);
+        else
+            display('BTN_ON: ...CONTINUE cycle');
+            set(handles.btn_on,'Enable','off');
+            set(handles.btn_pause,'Enable','on');
+            set(handles.btn_pause,'string','Pause');
+            set(handles.ind_sim,'String','ON');
+            set(handles.ind_status,'String','RUNNING');
+            main(2); % unpause state
+            btn_on_Callback(hObject, eventdata, handles);
+        end
+    otherwise % treat as normal mode
+        display('BTN_ON: start NORMAL cycle');
+        set(handles.btn_on,'Enable','off');
+        set(handles.btn_stop,'Enable','on');
+        set(handles.btn_pause,'Enable','on');
+        set(handles.ind_status,'String','RUNNING');
+        main(1);
+        % run finished
         set(handles.btn_on,'Enable','on');
+        set(handles.btn_stop,'Enable','on');
         set(handles.btn_pause,'Enable','off');
-        set(handles.ind_sim,'String','OFF');
         set(handles.ind_status,'String','FINISHED');
-        mode=0;
-    end
 end
-
+display('BTN_ON: cycle FINISHED');
 % enable inputs
 set(handles.val_centerx,'Enable','on');
 set(handles.val_centery,'Enable','on');
@@ -373,17 +418,19 @@ if ~isappdata(0,'x_data')||~isappdata(0,'y_data')||...
         ~isappdata(0,'loopnr')||~isappdata(0,'cyclenr')||...
         ~isappdata(0,'xmax')||~isappdata(0,'ymax')
     % error loading data+
+    display('BTN_ON: ERROR receiving data, STOPPING');
     set(handles.ind_error,'string','ERROR: unable to receive stored data!');
     return;
 end
+display('BTN_ON: receiving data');
 xpos=getappdata(0,'x_data');
 ypos=getappdata(0,'y_data');
 power=getappdata(0,'p_data');
 time=getappdata(0,'t_data');
 loop_nr=getappdata(0,'loopnr');
 cycle_nr=getappdata(0,'cyclenr');
-xmax=getappdata(0,'xmax');
-ymax=getappdata(0,'ymax');
+xmax=getappdata(0,'xmax')*50/4096;
+ymax=getappdata(0,'ymax')*50/4096;
 pmax=getappdata(0,'pmax');
 tot_acc=getappdata(0,'tot_acc');
 acc=getappdata(0,'acc');
@@ -400,14 +447,14 @@ for item=1:max(cycle_nr)
     max_x=xmax(find(cycle_nr==item,1),1);
     max_y=ymax(find(cycle_nr==item,1),1);
 end
-
+display('BTN_ON: plot position');
 % position plot
 plot(handles.plt_pos,xpos,ypos,max_x,max_y,'ro','markersize',10);
 % plot(handles.plt_pos,);
 axis(handles.plt_pos,[min(xpos) max(xpos) min(ypos) max(ypos)]);
 grid(handles.plt_pos,'on');
 grid(handles.plt_pos,'minor');
-
+display('BTN_ON: plot time');
 % time plot
 % calculate relative position
 offsetx=min(xpos)+(max(xpos)-min(xpos))/2;
@@ -429,8 +476,10 @@ plot(handles.plt_time,time,power);
 ylim(handles.plt_time,[min(power(:,1)) max(power(:,1))]);
 grid(handles.plt_time,'on');
 grid(handles.plt_time,'minor');
+display('BTN_ON: legend');
 legend(handles.plt_time,'X position','Y position','Power');
 
+display('BTN_ON: high pow');
 % show location of highest power
 set(handles.val_Pmax,'string',num2str(round(max(max_p))));
 set(handles.val_Pxmax,'string',num2str(round(max_x(find(max_p,1),1))));
@@ -442,129 +491,142 @@ set(handles.val_xmax,'string',num2str(round(max(xpos))));
 set(handles.val_ymin,'string',num2str(round(min(ypos))));
 set(handles.val_ymax,'string',num2str(round(max(ypos))));
 
-if mode==2
-    return;
+if doPause==0
+    display('BTN_ON: saving?');
+    % save to file
+    set(handles.ind_sim,'String','BUSY');
+    set(handles.ind_status,'String','SAVING');
+    header={'Time','Loopnr','X position','Y position','Power'};
+    data=[time,loop_nr,xpos,ypos,power];
+    switch dosave
+        case 1 % save as excel map
+            display('BTN_ON: saving (Excel)');
+            [f,fname,fext]=fileparts(save_loc);
+            % generate summary tab
+            center_data=strcat('X= ',num2str(centerx),' um, Y= ',num2str(centery),' um');
+            diameter_data=strcat(num2str(diameter),' um');
+            loop_data=strcat(num2str(max(loop_nr)),' loops');
+            cycle_data=strcat(num2str(max(cycle_nr)-1),' cycles');
+            scale_data=strcat(num2str(max(scale)),' x');
+            delay_data=strcat(num2str(delay),' samples');
+            read_data=strcat(num2str(tRead),' samples');
+            range_data=strcat('[',num2str(round(min(xpos)*10)/10),' | ',...
+                num2str(round(min(ypos)*10)/10),' um] X [',...
+                num2str(round(max(xpos)*10)/10),' | ',...
+                num2str(round(max(ypos)*10)/10),' um]');
+            acc_data=strcat(num2str(round(acc*100)/100),' nm / ',num2str(tot_acc),' nm');
+            t=max(time);
+            time_min=floor(t/60);
+            time_sec=ceil(t-time_min*60);
+            time_data=strcat(num2str(time_min),' minutes, ',num2str(time_sec),' seconds');
+            param_data={'Parameters',''; 'Center',center_data;...
+                'Diameter',diameter_data; 'Loops',loop_data;...
+                'Cycles', cycle_data; 'Scale factor',scale_data;'Delay time',...
+                delay_data;'Read time',read_data;...
+                'Accuracy [achieved/required',acc_data;...
+                'Sample frequency','800 Hz'; 'Range',range_data;...
+                'Elapsed time',time_data};
+            xlswrite(save_loc,param_data,'Summary','A1');
+            % generate all data tab
+            xlswrite(save_loc,header,'ALL','A1');
+            xlswrite(save_loc,data,'ALL','A2');
+            % generate cycle tabs
+            for cnt=1:max(cycle_nr)-1
+                elementnr=find(cycle_nr==cnt);
+                sheet_name=strcat('Cycle ',num2str(cnt));
+                xlswrite(save_loc,header,sheet_name,'A1');
+                xlswrite(save_loc,data(elementnr,:),sheet_name,'A2');
+            end
+        case 2 % save as CSV file
+            display('BTN_ON: saving (CSV)');
+            [f,fname,fext]=fileparts(save_loc);
+            data_table=table(data);
+            writetable(data_table,save_loc,'WriteVariableNames',1);
+        otherwise % no save
+            display('BTN_ON: no saving');
+    end
+    display('BTN_ON: end (doPause=0)');
+    set(handles.ind_sim,'String','OFF');
+    set(handles.ind_status,'String','IDLE');
 end
-
-% save to file
-set(handles.ind_sim,'String','BUSY');
-set(handles.ind_status,'String','SAVING');
-header={'Time','Loopnr','X position','Y position','Power'};
-data=[time,loop_nr,xpos,ypos,power];
-switch dosave
-    case 1 % save as excel map
-        [f,fname,fext]=fileparts(save_loc);
-        % generate summary tab
-        center_data=strcat('X= ',num2str(centerx),' um, Y= ',num2str(centery),' um');
-        diameter_data=strcat(num2str(diameter),' um');
-        loop_data=strcat(num2str(max(loop_nr)),' loops');
-        cycle_data=strcat(num2str(max(cycle_nr)-1),' cycles');
-        scale_data=strcat(num2str(max(scale)),' x');
-        delay_data=strcat(num2str(delay),' samples');
-        read_data=strcat(num2str(tRead),' samples');
-        range_data=strcat('[',num2str(round(min(xpos)*10)/10),' | ',...
-            num2str(round(min(ypos)*10)/10),' um] X [',...
-            num2str(round(max(xpos)*10)/10),' | ',...
-            num2str(round(max(ypos)*10)/10),' um]');
-        acc_data=strcat(num2str(round(acc*100)/100),' nm / ',num2str(tot_acc),' nm');
-        t=max(time);
-        time_min=floor(t/60);
-        time_sec=ceil(t-time_min*60);
-        time_data=strcat(num2str(time_min),' minutes, ',num2str(time_sec),' seconds');
-        param_data={'Parameters',''; 'Center',center_data;...
-            'Diameter',diameter_data; 'Loops',loop_data;...
-            'Cycles', cycle_data; 'Scale factor',scale_data;'Delay time',...
-            delay_data;'Read time',read_data;...
-            'Accuracy [achieved/required',acc_data;...
-            'Sample frequency','800 Hz'; 'Range',range_data;...
-            'Elapsed time',time_data};
-        xlswrite(save_loc,param_data,'Summary','A1');
-        % generate all data tab
-        xlswrite(save_loc,header,'ALL','A1');
-        xlswrite(save_loc,data,'ALL','A2');
-        % generate cycle tabs
-        for cnt=1:max(cycle_nr)-1
-            elementnr=find(cycle_nr==cnt);
-            sheet_name=strcat('Cycle ',num2str(cnt));
-            xlswrite(save_loc,header,sheet_name,'A1');
-            xlswrite(save_loc,data(elementnr,:),sheet_name,'A2');
-        end
-    case 2 % save as CSV file
-        [f,fname,fext]=fileparts(save_loc);
-        data_table=table(data);
-        writetable(data_table,save_loc,'WriteVariableNames',1);
-    otherwise % no save
-end
-set(handles.ind_sim,'String','OFF');
-set(handles.ind_status,'String','IDLE');
+display('BTN_ON: end');
 
 % --- Executes on button press in btn_pause.
 function btn_pause_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_pause (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global mode;
-global changes;
-% check output data
-if mode == 1 % current: run, next: pause
-    % enable inputs
-    set(handles.val_centerx,'Enable','on');
-    set(handles.val_centery,'Enable','on');
-    set(handles.val_diameter,'Enable','on');
-    set(handles.val_loops,'Enable','on');
-    set(handles.val_delay,'Enable','on');
-    set(handles.val_tRead,'Enable','on');
-    set(handles.val_tot_acc,'Enable','on');
-    set(handles.val_scale,'Enable','on');
-    set(handles.btn_on,'Enable','off');
-    set(handles.btn_pause,'Enable','on');
-    set(handles.btn_pause,'String','Unpause');
-    display('btn_pause: paused');
-    mode=2;
-    main(2); % pause sim
-elseif mode == 2 % current: pause, next: unpause
-    % disable inputs
-    set(handles.val_centerx,'Enable','off');
-    set(handles.val_centery,'Enable','off');
-    set(handles.val_diameter,'Enable','off');
-    set(handles.val_loops,'Enable','off');
-    set(handles.val_delay,'Enable','off');
-    set(handles.val_tRead,'Enable','off');
-    set(handles.val_tot_acc,'Enable','off');
-    set(handles.val_scale,'Enable','off');
-    set(handles.btn_pause,'enable','on');
-    set(handles.btn_pause,'String','Pause');
-    set(handles.ind_status,'String','RUNNING');
-    main(3); % unpause sim
-    if changes==1 % rerun simulation
-        display('btn_pause: rerun');
-        mode=0;
-        btn_on_Callback(findobj('tag','btn_on'), eventdata, handles);
-    else
-        display('btn_unpause: continue');
-        set(handles.ind_status,'String','RUNNING');
-        mode=1;
-        btn_on_Callback(findobj('tag','btn_on'), eventdata, handles);
-        mode=0;
-    end
-end
+display('BTN_PAUSE: ...');
+global doPause;
 
+switch doPause
+    case 0 % pause
+        display('BTN_PAUSE: doPause=0,pausing');
+        % enable inputs
+        set(handles.val_centerx,'Enable','on');
+        set(handles.val_centery,'Enable','on');
+        set(handles.val_diameter,'Enable','on');
+        set(handles.val_loops,'Enable','on');
+        set(handles.val_delay,'Enable','on');
+        set(handles.val_tRead,'Enable','on');
+        set(handles.val_tot_acc,'Enable','on');
+        set(handles.val_scale,'Enable','on');
+        set(handles.btn_on,'Enable','off');
+        set(handles.btn_pause,'Enable','on');
+        set(handles.btn_pause,'String','Unpause');
+        doPause=1;
+    case 1 % Unpause
+        display('BTN_PAUSE: doPause=1, unpausing');
+        % disable inputs
+        set(handles.val_centerx,'Enable','off');
+        set(handles.val_centery,'Enable','off');
+        set(handles.val_diameter,'Enable','off');
+        set(handles.val_loops,'Enable','off');
+        set(handles.val_delay,'Enable','off');
+        set(handles.val_tRead,'Enable','off');
+        set(handles.val_tot_acc,'Enable','off');
+        set(handles.val_scale,'Enable','off');
+        set(handles.btn_pause,'enable','on');
+        set(handles.btn_pause,'String','Pause');
+        set(handles.ind_status,'String','RUNNING');
+        doPause=2;
+    otherwise % unknown
+        display('BTN_PAUSE: doPause=unknown, stop');
+        % enable inputs
+        set(handles.val_centerx,'Enable','on');
+        set(handles.val_centery,'Enable','on');
+        set(handles.val_diameter,'Enable','on');
+        set(handles.val_loops,'Enable','on');
+        set(handles.val_delay,'Enable','on');
+        set(handles.val_tRead,'Enable','on');
+        set(handles.val_tot_acc,'Enable','on');
+        set(handles.val_scale,'Enable','on');
+        set(handles.btn_on,'Enable','off');
+        set(handles.btn_pause,'Enable','on');
+        set(handles.btn_pause,'String','Pause');
+        doPause=0;
+end
+display('BTN_PAUSE: end');
 % --- Executes on button press in btn_reset.
 function btn_reset_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_reset (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+display('BTN_RESET: ...');
 reset=questdlg('Do you really want to reset the interface?!','Reset','Cancel','Reset','Cancel');
 if strcmp(reset,'Cancel')
+    display('BTN_RESET: cancel');
     return
 end
+display('BTN_RESET: resetting');
 UserInterface_OpeningFcn(findobj('Tag','fig_GUI'),eventdata,handles);
-
+display('BTN_RESET: end');
 % --- Executes on button press in btn_stop.
 function btn_stop_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_stop (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+display('BTN_STOP: ...');
 set(handles.ind_status,'string','STOPPING');
 main(-1);
 set(handles.ind_sim,'string','OFF');
@@ -581,6 +643,7 @@ set(handles.val_scale,'Enable','on');
 set(handles.btn_on,'Enable','on');
 set(handles.btn_pause,'Enable','off');
 set(handles.btn_pause,'String','Pause');
+display('BTN_STOP: end');
 
 %%%%%%%%%%%%%%%%% SETTING VALUES %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -601,8 +664,8 @@ else
     setappdata(0,'centerx',check); % Update value in appdata
     % update time
     [time_min,time_sec]=calcTime();
-    set(handles.ind_time_min,'String',num2str(time_min));
-    set(handles.ind_time_sec,'String',num2str(time_sec));
+    set(handles.val_est_time_min,'String',num2str(time_min));
+    set(handles.val_est_time_sec,'String',num2str(time_sec));
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -626,8 +689,8 @@ else
     setappdata(0,'centery',check); % Update value in appdata
     % update time
     [time_min,time_sec]=calcTime();
-    set(handles.ind_time_min,'String',num2str(time_min));
-    set(handles.ind_time_sec,'String',num2str(time_sec));
+    set(handles.val_est_time_min,'String',num2str(time_min));
+    set(handles.val_est_time_sec,'String',num2str(time_sec));
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -648,22 +711,24 @@ if contains(val,' ')||contains(val,',')||contains(val,'i')||contains(val,'j')...
     set(hObject,'BackgroundColor',[1 0 0]);% red
     set(handles.ind_error,'String','Invallid value, 1 < Diameter < 10.000');
 else
-    setappdata(0,'diameter',check); % Update value in appdata
-    % update accuracy
+    tot_acc=getappdata(0,'tot_acc');
     loops=getappdata(0,'loops');
-    acc=check/(2*loops-1);
-    setappdata(0,'acc',acc);
-    set(handles.val_acc,'String',num2str(acc));
-    % update cycles
-    tot_acc=getappdata(0,'tot_acc')/1000;
     scale=getappdata(0,'scale');
-    cycles=ceil(log(acc/tot_acc)/log(scale));
+    % update diameter
+    setappdata(0,'diameter',check);
+    % update cycles + acc
+    cycles=ceil(1+log(1000*check/((2*loops-1)*tot_acc))/log(scale));
+    acc=round(1000*check*scale^(1-cycles)/(2*loops-1));
     setappdata(0,'cycles',cycles);
-    set(handles.val_cycles,'String',num2str(cycles));
+    setappdata(0,'acc',acc);
     % update time
     [time_min,time_sec]=calcTime();
-    set(handles.ind_time_min,'String',num2str(time_min));
-    set(handles.ind_time_sec,'String',num2str(time_sec));
+    % show values
+    set(handles.val_diameter,'String',num2str(check));
+    set(handles.val_cycles,'String',num2str(cycles));
+    set(handles.val_acc,'String',num2str(acc));
+    set(handles.val_est_time_min,'String',num2str(time_min));
+    set(handles.val_est_time_sec,'String',num2str(time_sec));
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -684,22 +749,24 @@ if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
     set(hObject,'BackgroundColor',[1 0 0]);% red
     set(handles.ind_error,'String','Invallid value, 1 < Loops < 50');
 else
-    setappdata(0,'loops',check); % Update value in appdata
-    % update accuracy
+    tot_acc=getappdata(0,'tot_acc');
     diameter=getappdata(0,'diameter');
-    acc=diameter/(2*check-1);
-    setappdata(0,'acc',acc);
-    set(handles.val_acc,'String',num2str(acc));
-    % update cycles
-    tot_acc=getappdata(0,'tot_acc')/1000;
     scale=getappdata(0,'scale');
-    cycles=ceil(log(acc/tot_acc)/log(scale));
+    % update loops
+    setappdata(0,'loops',check);
+    % update cycles + acc
+    cycles=ceil(1+log(1000*diameter/((2*check-1)*tot_acc))/log(scale));
+    acc=round(1000*diameter*scale^(1-cycles)/(2*check-1));
     setappdata(0,'cycles',cycles);
-    set(handles.val_cycles,'String',num2str(cycles));
+    setappdata(0,'acc',acc);
     % update time
     [time_min,time_sec]=calcTime();
-    set(handles.ind_time_min,'String',num2str(time_min));
-    set(handles.ind_time_sec,'String',num2str(time_sec));
+    % show values
+    set(handles.val_loops,'String',num2str(check));
+    set(handles.val_cycles,'String',num2str(cycles));
+    set(handles.val_acc,'String',num2str(acc));
+    set(handles.val_est_time_min,'String',num2str(time_min));
+    set(handles.val_est_time_sec,'String',num2str(time_sec));
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -720,17 +787,24 @@ if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
     set(hObject,'BackgroundColor',[1 0 0]);% red
     set(handles.ind_error,'String','Invallid value, 1 < Total accuracy < 100000');
 else
-    setappdata(0,'tot_acc',check); % Update value in appdata
-    % update cycles
-    acc=getappdata(0,'acc');
+    diameter=getappdata(0,'diameter');
+    loops=getappdata(0,'loops');
     scale=getappdata(0,'scale');
-    cycles=ceil(log(1000*acc/check)/log(scale));
+    % update tot_acc
+    setappdata(0,'tot_acc',check);
+    % update cycles + acc
+    cycles=ceil(1+log(1000*diameter/((2*loops-1)*check))/log(scale));
+    acc=round(1000*diameter*scale^(1-cycles)/(2*loops-1));
     setappdata(0,'cycles',cycles);
-    set(handles.val_cycles,'String',num2str(cycles));
+    setappdata(0,'acc',acc);
     % update time
     [time_min,time_sec]=calcTime();
-    set(handles.ind_time_min,'String',num2str(time_min));
-    set(handles.ind_time_sec,'String',num2str(time_sec));
+    % show values
+    set(handles.val_tot_acc,'String',num2str(check));
+    set(handles.val_cycles,'String',num2str(cycles));
+    set(handles.val_acc,'String',num2str(acc));
+    set(handles.val_est_time_min,'String',num2str(time_min));
+    set(handles.val_est_time_sec,'String',num2str(time_sec));
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -747,21 +821,28 @@ function val_scale_Callback(hObject, eventdata, handles)
 val=get(hObject,'String');
 check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
-        ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>10||check<1
+        ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>20||check<=1
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.ind_error,'String','Invallid value, 1 < Scale < 10');
+    set(handles.ind_error,'String','Invallid value, 1 <= Scale < 20');
 else
-    setappdata(0,'scale',check); % Update value in appdata
-    % update cycles
-    tot_acc=getappdata(0,'tot_acc')/1000;
-    acc=getappdata(0,'acc');
-    cycles=ceil(log(acc/tot_acc)/log(check));
+    tot_acc=getappdata(0,'tot_acc');
+    diameter=getappdata(0,'diameter');
+    loops=getappdata(0,'loops');
+    % update loops
+    setappdata(0,'scale',check);
+    % update cycles + acc
+    cycles=ceil(1+log(1000*diameter/((2*loops-1)*tot_acc))/log(check));
+    acc=round(1000*diameter*check^(1-cycles)/(2*loops-1));
     setappdata(0,'cycles',cycles);
-    set(handles.val_cycles,'String',num2str(cycles));
+    setappdata(0,'acc',acc);
     % update time
     [time_min,time_sec]=calcTime();
-    set(handles.ind_time_min,'String',num2str(time_min));
-    set(handles.ind_time_sec,'String',num2str(time_sec));
+    % show values
+    set(handles.val_scale,'String',num2str(check));
+    set(handles.val_cycles,'String',num2str(cycles));
+    set(handles.val_acc,'String',num2str(acc));
+    set(handles.val_est_time_min,'String',num2str(time_min));
+    set(handles.val_est_time_sec,'String',num2str(time_sec));
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -785,8 +866,8 @@ else
     setappdata(0,'delay',check); % Update value in appdata
     % update time
     [time_min,time_sec]=calcTime();
-    set(handles.ind_time_min,'String',num2str(time_min));
-    set(handles.ind_time_sec,'String',num2str(time_sec));
+    set(handles.val_est_time_min,'String',num2str(time_min));
+    set(handles.val_est_time_sec,'String',num2str(time_sec));
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -810,8 +891,8 @@ else
     setappdata(0,'read_time',check); % Update value in appdata
     % update time
     [time_min,time_sec]=calcTime();
-    set(handles.ind_time_min,'String',num2str(time_min));
-    set(handles.ind_time_sec,'String',num2str(time_sec));
+    set(handles.val_est_time_min,'String',num2str(time_min));
+    set(handles.val_est_time_sec,'String',num2str(time_sec));
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -1186,6 +1267,52 @@ end
 % --- Executes during object creation, after setting all properties.
 function val_Ptmax_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to val_Ptmax (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function val_est_time_min_Callback(hObject, eventdata, handles)
+% hObject    handle to val_est_time_min (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of val_est_time_min as text
+%        str2double(get(hObject,'String')) returns contents of val_est_time_min as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function val_est_time_min_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to val_est_time_min (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function val_est_time_sec_Callback(hObject, eventdata, handles)
+% hObject    handle to val_est_time_sec (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of val_est_time_sec as text
+%        str2double(get(hObject,'String')) returns contents of val_est_time_sec as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function val_est_time_sec_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to val_est_time_sec (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
