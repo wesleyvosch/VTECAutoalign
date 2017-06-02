@@ -2,7 +2,6 @@ function main(state)
 global counter;
 global changes;
 global doPause;
-display('MAIN...');
 % get input handles of Simulink model
 mode_obj=find_system('Autoalign_system','BlockType','Constant','Name','mode');
 centerx_obj=find_system('Autoalign_system','BlockType','Constant','Name','center_x');
@@ -44,7 +43,6 @@ read_time_str=num2str(read_time);
 cnt_time=50*(min*60+sec);
 switch state
     case -1 % stop
-        display('MAIN: stop');
         if doPause>0
             % simulink paused, order stop with command
             set_param('Autoalign_system','SimulationCommand','stop');
@@ -53,7 +51,6 @@ switch state
             set_param(mode_obj{1},'Value','-1'); % simulink -> stop
         end
     case 0 % Build
-        display('MAIN: build');
         % update values
         set_param(centerx_obj{1},'Value',centerx_str);
         set_param(centery_obj{1},'Value',centery_str);
@@ -66,7 +63,6 @@ switch state
         set_param('Autoalign_system','SimulationCommand','start');
         return;
     case 1 % Run
-        display('MAIN: run');
         beep; % notify user with beep-sound (TEMP)
         set_param(mode_obj{1},'Value','1'); % simulink -> run
         counter=0; % reset counter
@@ -74,23 +70,18 @@ switch state
         set_param(mode_obj{1},'Value','1'); % simulink -> pause
         set_param('Autoalign_system','SimulationCommand','continue');
     otherwise
-        display('MAIN: other');
         % do nothing
 end
-display('MAIN: is doPause 2?');
 if doPause==2 % unpause
-    display('MAIN: doPause detected, doPause=2');
     set_param(mode_obj{1},'Value','1'); % simulink -> run
     if centerx==centerx_sim && centery==centery_sim &&...
             diameter==diameter_sim && loops==loops_sim &&...
             cycles==cycles_sim && delay==delay_sim && read_time==read_time_sim
         % no changes, continue
-        display('MAIN: pause, no changes');
         set_param('Autoalign_system','SimulationCommand','continue');
         changes=0;
     else
         % changes, restart
-        display('MAIN: pause, some things are changes');
         counter=0;
         changes=1;
         set_param('Autoalign_system','SimulationCommand','stop');
@@ -107,19 +98,16 @@ if doPause==2 % unpause
 end
 while strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')==0
     if doPause==1 % pause
-        display('MAIN: doPause detected')
         set_param('Autoalign_system','SimulationCommand','pause');
     elseif doPause==2
         break;
     end
     if counter>cnt_time
-        display('MAIN: Time out');
         break;
     end
     pause(.1);
     counter=counter+1;
 end
-display('MAIN: while ended');
 if state==3
     if centerx~=centerx_sim || centery~=centery_sim ||...
             diameter~=diameter_sim || loops~=loops_sim ||...
@@ -127,4 +115,3 @@ if state==3
         main(0);
     end
 end
-display('MAIN: ...');
