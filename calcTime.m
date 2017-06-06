@@ -22,11 +22,12 @@ else
     for cycleA=1:cycles
         for loopA=1:loops
             loop_time=loop_time+diameter*(8*loopA-3)/((2*loops-1)*scale^(cycleA-1));
-            move_time=move_time+2*diameter/scale^(cycleA-1);
+            move_time=move_time+diameter/scale^(cycleA-1);
         end
     end
-    samples=loop_time+move_time+abs(centerx)+abs(centery);
-    time=samples*(1+delay)/(800*(delay+read_time));
+    samples=ceil(loop_time+move_time+abs(centerx)+abs(centery));
+%     time=samples*(1+delay)/(800*(delay+read_time));
+    time=(samples+samples*read_time/delay)/800;
     min=floor(time/60);
     sec=ceil(time-min*60);
 end
