@@ -63,7 +63,6 @@ switch state
         set_param('Autoalign_system','SimulationCommand','start');
         return;
     case 1 % Run
-        beep; % notify user with beep-sound (TEMP)
         set_param(mode_obj{1},'Value','1'); % simulink -> run
         counter=0; % reset counter
     case 2 % unpause

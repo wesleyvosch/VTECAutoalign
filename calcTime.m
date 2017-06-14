@@ -4,7 +4,7 @@ if ~isappdata(0,'centerx')||~isappdata(0,'centery')||...
         ~isappdata(0,'cycles')||~isappdata(0,'scale')||...
         ~isappdata(0,'delay')||~isappdata(0,'read_time')
     min=0;
-    sec=0;
+    sec=1;
 else
     res=50/4096;
     centerx=getappdata(0,'centerx')/res;
