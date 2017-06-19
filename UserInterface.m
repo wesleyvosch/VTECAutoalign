@@ -1,10 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % DESCRIPTION:
-% This file is required for the GUI to be functional, it consists of
-% callbacks for the buttons and inputs. after startup it need to connect to
-% an Arduino board, when first connected it need to build the program onto
-% the board. afterwards it is able to switch between move mode and search
-% mode without re-building.
+% This file is used for the functions within the GUI, the callbacks are
+% generated automatically and are used to operate the buttons and change
+% the parameters. 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function varargout = UserInterface(varargin)
@@ -31,7 +29,7 @@ function varargout = UserInterface(varargin)
 
 % Edit the above text to modify the response to help UserInterface
 
-% Last Modified by GUIDE v2.5 14-Jun-2017 11:49:17
+% Last Modified by GUIDE v2.5 19-Jun-2017 14:57:10
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -70,18 +68,26 @@ guidata(hObject, handles);
 % uiwait(handles.fig_GUI);
 
 %% START INITIALIZATION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% After the GUI is created is this function called. 
+% It will remove all previously saved appdata, clear the plots and reset
+% the parameters to their default values
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 load_system('Autoalign_system.slx'); % load simulink model
 set_param('Autoalign_system','SimulationMode','external'); % set model to external mode
 
-%% STORAGE
 % declare global variables
 global doPause;
+global wasPaused;
 global inputerr;
-global changes;
+global doStop;
 
+doStop=0;
 doPause=0;
+wasPaused=0;
 inputerr=zeros(8,1);
-changes=0;
 
 % clear appdata
 appdata={'cyclenr';'loopnr';'t_data';...    %from callbacks in Simulink
@@ -104,6 +110,10 @@ scale=2;
 tot_acc=500;
 delay=16;
 read=1;
+pset=3;
+pxset=-8;
+pyset=4;
+pfactor=5;
 
 % set appdata values
 setappdata(0,'diameter',diameter);
@@ -114,12 +124,18 @@ setappdata(0,'scale',scale);
 setappdata(0,'tot_acc',tot_acc);
 setappdata(0,'delay',delay);
 setappdata(0,'read_time',read);
+%temp
+setappdata(0,'p_set',pset);
+setappdata(0,'px_set',pxset);
+setappdata(0,'py_set',pyset);
+setappdata(0,'pfactor',pfactor);
 
 cycles=ceil(1+log(1000*diameter/((2*loops-1)*tot_acc))/log(scale));
 acc=round(1000*diameter*scale^(1-cycles)/(2*loops-1));
 setappdata(0,'cycles',cycles);
 setappdata(0,'acc',acc);
 [tm,ts]=calcTime();
+time=strcat(num2str(tm,'%02i'),':',num2str(ts,'%02i'));
 
 % Default settings for centerx
 set(handles.val_centerx,'String',num2str(centerx));
@@ -165,44 +181,39 @@ set(handles.val_read,'backgroundcolor','white');
 set(handles.ind_error,'String',' ');
 set(handles.ind_error,'Foregroundcolor','red');
 
-% Default settings for simulation indicator
-set(handles.ind_sim,'String','OFF');
-set(handles.ind_sim,'Foregroundcolor','black');
+% Default values
+% set(handles.val_sim,'String','OFF');
+% set(handles.val_status,'String','ARDUINO');
+set(handles.val_safreq,'String','800 Hz');
+set(handles.text140,'String','');
+set(handles.text168,'String','');
+set(handles.val_time_est,'String',time);
+set(handles.val_time_exp,'String','00:00');
+set(handles.val_rangex_min,'String',strcat(num2str(centerx-diameter/2),' um'));
+set(handles.val_rangex_max,'String',strcat(num2str(centerx+diameter/2),' um'));
+set(handles.val_rangey_min,'String',strcat(num2str(centery-diameter/2),' um'));
+set(handles.val_rangey_max,'String',strcat(num2str(centery+diameter/2),' um'));
+set(handles.val_pmax,'String','____ uW');
+set(handles.val_p_prec,'String','____ nW');
+set(handles.val_sweetx,'String','____ um');
+set(handles.val_sweetx_prec,'String','____ nm');
+set(handles.val_sweety,'String','____ um');
+set(handles.val_sweety_prec,'String','____ nm');
+set(handles.val_acc,'String',strcat(num2str(acc),' nm'));
+set(handles.val_cycle,'String',num2str(cycles));
+set(handles.ind_error,'String','');
 
-% Default niput values
-set(handles.ind_status,'String','EXTERNAL');
-set(handles.ind_status,'Foregroundcolor','black');
-set(handles.ind_sample,'String','800');
-set(handles.int_cyclecnt,'String',num2str(cycles));
-set(handles.ind_acc,'String',num2str(acc));
-
-% Default output values
-set(handles.ind_xmin,'String',num2str(centerx-diameter/2));
-set(handles.ind_xmax,'String',num2str(centerx+diameter/2));
-set(handles.ind_ymin,'String',num2str(centery-diameter/2));
-set(handles.ind_ymax,'String',num2str(centery+diameter/2));
-set(handles.ind_est_min,'String',num2str(tm));
-set(handles.ind_est_sec,'String',num2str(ts));
-
-set(handles.ind_Pmax,'String','x');
-set(handles.ind_Pprec,'String','x');
-set(handles.ind_Px,'String','x');
-set(handles.ind_Pxprec,'String','x');
-set(handles.ind_Py,'String','x');
-set(handles.ind_Pyprec,'String','x');
-set(handles.ind_exp_min,'String','x');
-set(handles.ind_exp_sec,'String','x');
+%temp
+set(handles.val_pSet,'String',num2str(pset));
+set(handles.val_pxSet,'String',num2str(pxset));
+set(handles.val_pySet,'String',num2str(pyset));
+set(handles.val_pfactor,'String',num2str(pfactor));
 
 % Default settings for buttons
-set(handles.btn_on,'string','Run');
-set(handles.btn_on,'Enable','on');
+set_values('idle',handles);
 set(handles.btn_pause,'string','Pause');
-set(handles.btn_pause,'Enable','off');
-set(handles.btn_save,'Enable','off');
-set(handles.btn_reset,'Enable','on');
-set(handles.btn_stop,'Enable','on');
 set(handles.btn_debug,'value',0);
-set(handles.btn_debug,'Enable','on');
+set(handles.btn_ack,'Visible','off');
 
 %% PLOT
 % Default location plot
@@ -227,11 +238,14 @@ xlabel(handles.plt_time,'Time [seconds]');
 grid(handles.plt_time,'on');
 grid(handles.plt_time,'minor');
 yyaxis(handles.plt_time,'left');
+plot(handles.plt_time,0,0,0,0);
 ylabel(handles.plt_time,'Position [um]');
 ylim(handles.plt_time,[-diameter/2 diameter/2]);
 yyaxis(handles.plt_time,'right');
 ylabel(handles.plt_time,'Power [uW]');
+plot(handles.plt_time,0,0);
 ylim(handles.plt_time,[0 3]);
+legend(handles.plt_time,'X position','Y position','Power','location','northoutside','Orientation','Horizontal');
 %% END OF INITIALIZATION
 
 % --- Outputs from this function are returned to the command line.
@@ -244,46 +258,176 @@ function varargout = UserInterface_OutputFcn(hObject, eventdata, handles)
 % Get default command line output from handles structure
 varargout{1} = handles.output;
 
-%% BUTTON CALLBACKS
-% --- Executes on button press in btn_on.
+%% set enable/disable items
+function set_values(status, handles)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DESCRIPTION:
+% This function is controls which buttons and parameters are enabled.
+% And depends on the status of the simulation. It uses the handles from the
+% callback to write to the correct items.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+display(strcat('set_values: status=',status));
+switch status
+    case {'build','re-build'}
+        % enable/disable buttons
+        set(handles.btn_on,'enable','off');
+        set(handles.btn_stop,'enable','off');
+        set(handles.btn_pause,'enable','off');
+        set(handles.btn_save,'enable','off');
+        set(handles.btn_debug,'enable','off');
+        set(handles.btn_reset,'enable','on');
+        
+        % enable/disable parameters
+        set(handles.val_centerx,'enable','off');
+        set(handles.val_centery,'enable','off');
+        set(handles.val_diameter,'enable','off');
+        set(handles.val_loops,'enable','off');
+        set(handles.val_tot_acc,'enable','off');
+        set(handles.val_scale,'enable','off');
+        set(handles.val_delay,'enable','off');
+        set(handles.val_read,'enable','off');
+        
+        set(handles.val_sim,'String','ON');
+    case {'idle','end','debug','external'}
+        % enable/disable buttons
+        set(handles.btn_on,'enable','on');
+        set(handles.btn_stop,'enable','off');
+        set(handles.btn_pause,'enable','off');
+        set(handles.btn_save,'enable','on');
+        set(handles.btn_debug,'enable','on');
+        set(handles.btn_reset,'enable','on');
+        
+        % enable/disable parameters
+        set(handles.val_centerx,'enable','on');
+        set(handles.val_centery,'enable','on');
+        set(handles.val_diameter,'enable','on');
+        set(handles.val_loops,'enable','on');
+        set(handles.val_tot_acc,'enable','on');
+        set(handles.val_scale,'enable','on');
+        set(handles.val_delay,'enable','on');
+        set(handles.val_read,'enable','on');
+        
+        set(handles.val_sim,'String','OFF');
+    case 'run'
+        % enable/disable buttons
+        set(handles.btn_on,'enable','off');
+        set(handles.btn_stop,'enable','on');
+        set(handles.btn_pause,'enable','on');
+        set(handles.btn_save,'enable','off');
+        set(handles.btn_debug,'enable','off');
+        set(handles.btn_reset,'enable','on');
+        
+        % enable/disable parameters
+        set(handles.val_centerx,'enable','off');
+        set(handles.val_centery,'enable','off');
+        set(handles.val_diameter,'enable','off');
+        set(handles.val_loops,'enable','off');
+        set(handles.val_tot_acc,'enable','off');
+        set(handles.val_scale,'enable','off');
+        set(handles.val_delay,'enable','off');
+        set(handles.val_read,'enable','off');
+        
+        set(handles.val_sim,'String','ON');
+    case 'pause'
+        % enable/disable buttons
+        set(handles.btn_on,'enable','off');
+        set(handles.btn_stop,'enable','on');
+        set(handles.btn_pause,'enable','on');
+        set(handles.btn_save,'enable','on');
+        set(handles.btn_debug,'enable','on');
+        set(handles.btn_reset,'enable','on');
+        
+        % enable/disable parameters
+        set(handles.val_centerx,'enable','on');
+        set(handles.val_centery,'enable','on');
+        set(handles.val_diameter,'enable','on');
+        set(handles.val_loops,'enable','on');
+        set(handles.val_tot_acc,'enable','on');
+        set(handles.val_scale,'enable','on');
+        set(handles.val_delay,'enable','on');
+        set(handles.val_read,'enable','on');
+        
+        set(handles.val_sim,'String','ON');
+    case 'save'
+        % enable/disable buttons
+        set(handles.btn_on,'enable','on');
+        set(handles.btn_stop,'enable','on');
+        set(handles.btn_pause,'enable','off');
+        set(handles.btn_save,'enable','off');
+        set(handles.btn_debug,'enable','on');
+        set(handles.btn_reset,'enable','on');
+        
+        % enable/disable parameters
+        set(handles.val_centerx,'enable','on');
+        set(handles.val_centery,'enable','on');
+        set(handles.val_diameter,'enable','on');
+        set(handles.val_loops,'enable','on');
+        set(handles.val_tot_acc,'enable','on');
+        set(handles.val_scale,'enable','on');
+        set(handles.val_delay,'enable','on');
+        set(handles.val_read,'enable','on');
+        
+        set(handles.val_sim,'String','OFF');
+    otherwise % set as idle
+        % enable/disable buttons
+        set(handles.btn_on,'enable','on');
+        set(handles.btn_stop,'enable','off');
+        set(handles.btn_pause,'enable','off');
+        set(handles.btn_save,'enable','on');
+        set(handles.btn_debug,'enable','on');
+        set(handles.btn_reset,'enable','on');
+        
+        % enable/disable parameters
+        set(handles.val_centerx,'enable','on');
+        set(handles.val_centery,'enable','on');
+        set(handles.val_diameter,'enable','on');
+        set(handles.val_loops,'enable','on');
+        set(handles.val_tot_acc,'enable','on');
+        set(handles.val_scale,'enable','on');
+        set(handles.val_delay,'enable','on');
+        set(handles.val_read,'enable','on');
+        
+        set(handles.val_sim,'String','OFF');
+        status='idle';
+end
+set(handles.val_status,'string',status);
+
+%% pressed btn_on
 function btn_on_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_on (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% state=str2double(get(hObject,'Value'));
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the button 'run' is pressed. This function is
+% active when no errors are present. The results and plots are cleared and
+% the parameters are disabled. Then is the system build and running, after
+% the system is finished, are the results displayed and the plots made.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+global doStop;
 global doPause;
-global changes;
+global wasPaused;
 global inputerr;
+global counter;
 
 if max(inputerr)>0
     % error in parameters
-    err_msg=strcat('ERROR: Unable to start simulation, there are ',num2str(sum(inputerr)),...
-        ' pending errors! Solve these errors before running the program.');
+    err_msg=strcat('Error: Unable to start simulation, there are ',num2str(sum(inputerr)),' errors!');
     set(handles.ind_error,'String',err_msg);
     return;
-else
-    % clear error message
-    set(handles.ind_error,'String','');
 end
-% disable inputs
-set(handles.val_centerx,'Enable','off');
-set(handles.val_centery,'Enable','off');
-set(handles.val_diameter,'Enable','off');
-set(handles.val_loops,'Enable','off');
-set(handles.val_delay,'Enable','off');
-set(handles.val_read,'Enable','off');
-set(handles.val_tot_acc,'Enable','off');
-set(handles.val_scale,'Enable','off');
-set(handles.btn_on,'Enable','off');
-set(handles.btn_save,'Enable','off');
-set(handles.btn_debug,'Enable','off');
-
+% clear error message
+set(handles.ind_error,'String','');
 % clear output values
-set(handles.ind_Pmax,'String','x');
-set(handles.ind_Px,'String','x');
-set(handles.ind_Py,'String','x');
-set(handles.ind_exp_min,'String','x');
-set(handles.ind_exp_sec,'String','x');
+set(handles.val_time_exp,'String','00:00');
+set(handles.val_pmax,'String','____ uW');
+set(handles.val_p_prec,'String','____ nW');
+set(handles.val_sweetx,'String','____ um');
+set(handles.val_sweetx_prec,'String','____ nm');
+set(handles.val_sweety,'String','____ um');
+set(handles.val_sweety_prec,'String','____ nm');
 
 % clear/reset plots
 cla(handles.plt_pos,'reset');
@@ -325,88 +469,60 @@ yyaxis(handles.plt_time,'right');
 ylabel(handles.plt_time,'Power [uW]');
 ylim(handles.plt_time,[0 3]);
 
-if doPause==0
+if doPause==0 && wasPaused==0 && doStop==0
+    set(handles.btn_ack,'visible','off');
     % prepare for simulation
-    set(handles.ind_status,'String','PREPARING');
+    set_values('build',handles);
     [time_min,time_sec]=calcTime();
-    set(handles.ind_est_min,'String',num2str(time_min));
-    set(handles.ind_est_sec,'String',num2str(time_sec));
+    time=strcat(num2str(time_min,'%02i'),':',num2str(time_sec,'%02i'));
+    set(handles.val_time_est,'String',time);
+    
     % run simulation
-    set(handles.btn_stop,'Enable','off');
-    set(handles.ind_sim,'String','ON');
+    set(handles.val_sim,'String','ON');
+    set_values('run',handles);
+    set(handles.val_time_exp,'String','00:00');
     main(0); % build sim
+    beep;
 end
 
 switch doPause
     case 1 % paused mode, 
-        set(handles.btn_on,'Enable','off');
-        set(handles.btn_stop,'Enable','on');
-        set(handles.btn_save,'Enable','on');
-        set(handles.btn_pause,'Enable','on');
-        set(handles.btn_pause,'string','Unpause');
-        set(handles.ind_status,'String','PAUSED');
-        set(handles.btn_on,'Enable','on');
-        set(handles.btn_debug,'Enable','on');
+        display('btn_on: pause');
+        set_values('pause',handles);
         main(3); % Sim paused, waiting
+        display('btn_on: pause2');
     case 2 % unpaused mode
-        if changes==1 % rerun sim
-            set(handles.btn_on,'Enable','off');
-            set(handles.btn_save,'Enable','off');
-            set(handles.btn_pause,'Enable','off');
-            set(handles.btn_pause,'string','Pause');
-            set(handles.btn_debug,'Enable','off');
-            set(handles.ind_status,'String','RE-BUILDING');
-            doPause=0;
-            changes=0;
-            btn_on_Callback(hObject, eventdata, handles);
-        else % continue sim
-            set(handles.btn_on,'Enable','off');
-            set(handles.btn_save,'Enable','off');
-            set(handles.btn_pause,'Enable','on');
-            set(handles.btn_pause,'string','Pause');
-            set(handles.ind_sim,'String','ON');
-            set(handles.btn_debug,'Enable','off');
-            set(handles.ind_status,'String','RUNNING');
-            set(handles.btn_on,'Enable','off');
-            main(2); % continue sim
-            btn_on_Callback(hObject, eventdata, handles);
-        end
+        display('btn_on: continue');
+        set_values('run',handles);
+        main(2); % continue sim
+        btn_on_Callback(hObject, eventdata, handles);
     otherwise % normal mode
-        set(handles.btn_on,'Enable','off');
-        set(handles.btn_stop,'Enable','on');
-        set(handles.btn_save,'Enable','off');
-        set(handles.btn_pause,'Enable','on');
-        set(handles.ind_status,'String','RUNNING');
-        main(1); % run sim
-        set(handles.btn_on,'Enable','on');
-        set(handles.btn_stop,'Enable','on');
-        set(handles.btn_save,'Enable','on');
-        set(handles.btn_pause,'Enable','off');
-        set(handles.btn_debug,'Enable','on');
-        set(handles.ind_status,'String','FINISHED');
+        if wasPaused==0
+            display('btn_on: normal');
+            set_values('run',handles);
+            main(1); % run sim
+            if doPause>0
+                set_values('pause',handles);
+                btn_on_Callback(hObject, eventdata, handles);
+            else
+                set_values('end',handles);
+            end
+        else
+           display('btn_on: was paused');
+           set_values('end',handles);
+           wasPaused=0;
+        end
 end
-
-% enable inputs
-set(handles.val_centerx,'Enable','on');
-set(handles.val_centery,'Enable','on');
-set(handles.val_diameter,'Enable','on');
-set(handles.val_loops,'Enable','on');
-set(handles.val_delay,'Enable','on');
-set(handles.val_read,'Enable','on');
-set(handles.val_tot_acc,'Enable','on');
-set(handles.val_scale,'Enable','on');
-set(handles.btn_on,'Enable','on');
-
 % receive stored data
 if ~isappdata(0,'x_data')||~isappdata(0,'y_data')||...
         ~isappdata(0,'p_data')||~isappdata(0,'t_data')||...
         ~isappdata(0,'loopnr')||~isappdata(0,'cyclenr')||...
         ~isappdata(0,'xmax')||~isappdata(0,'ymax')||~isappdata(0,'pmax')
     % error loading data
-    set(handles.ind_error,'string','ERROR: unable to receive stored data!');
+    set(handles.ind_error,'string','Error: Unable to receive stored data!');
     return;
 end
-
+display('get');
 % get appdata
 time_t=getappdata(0,'t_data');
 power_t=getappdata(0,'p_data');
@@ -469,137 +585,136 @@ ylim(handles.plt_time,[min(power(:,1)) max(power(:,1))]);
 grid(handles.plt_time,'on');
 grid(handles.plt_time,'minor');
 ylabel(handles.plt_time,'Power [uW]');
-
 legend(handles.plt_time,'X position','Y position','Power','location','northoutside','Orientation','Horizontal');
 
 % show position of highest power
-set(handles.ind_Pmax,'string',num2str(round(max_p(end,1)*100)/100));
-set(handles.ind_Px,'string',num2str(round(max_x(end,1)*100)/100));
-set(handles.ind_Py,'string',num2str(round(max_y(end,1)*100)/100));
+set(handles.val_pmax,'String',strcat(num2str(round(max_p(end,1)*100)/100),' uW'));
+set(handles.val_sweetx,'String',strcat(num2str(round(max_x(end,1)*100)/100),' um'));
+set(handles.val_sweety,'String',strcat(num2str(round(max_y(end,1)*100)/100),' um'));
 
-set(handles.ind_Pprec,'string',num2str(round((max(max_p)-min(max_p))*100)/100));
-set(handles.ind_Pxprec,'string',num2str(round((max(max_x)-min(max_x))*100)/100));
-set(handles.ind_Pyprec,'string',num2str(round((max(max_y)-min(max_y))*100)/100));
+set(handles.val_p_prec,'String',strcat(num2str(round((max(max_p)-min(max_p))*100)/100),' nW'));
+set(handles.val_sweetx_prec,'String',strcat(num2str(round((max(max_x)-min(max_x))*100)/100),' nm'));
+set(handles.val_sweety_prec,'String',strcat(num2str(round((max(max_y)-min(max_y))*100)/100),' nm'));
 
-% show range
-set(handles.ind_xmin,'string',num2str(round(min(xpos)*100)/100));
-set(handles.ind_xmax,'string',num2str(round(max(xpos)*100)/100));
-set(handles.ind_ymin,'string',num2str(round(min(ypos)*100)/100));
-set(handles.ind_ymax,'string',num2str(round(max(ypos)*100)/100));
+if wasPaused==0
+    display('btn_on: end, was paused');
+    set_values('idle',handles);
+else
+    display('btn_on: end, was not paused');
+    m=floor(counter/600);
+    s=floor(counter/10-m*60);
+    t=strcat(num2str(m,'%02i'),':',num2str(s,'%02i'));
+    set(findobj('tag','val_time_exp'),'String',t);
+end
 
-% show actual time
-minutes=floor(max(time)/60);
-seconds=ceil(max(time)-minutes*60);
-set(handles.ind_exp_min,'string',num2str(minutes));
-set(handles.ind_exp_sec,'string',num2str(seconds));
-
-set(handles.btn_save,'Enable','on');
-set(handles.ind_sim,'String','OFF');
-set(handles.ind_status,'String','IDLE');
-
-% --- Executes on button press in btn_stop.
+%% pressed btn_stop.
 function btn_stop_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_stop (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set(handles.ind_status,'string','STOPPING');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the button 'stop' is pressed. This function
+% will stop the simulation safely. (meaning that the motors are turned off
+% first and the read function is completed. Afterwards are the parameters
+% and buttons enabled.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+global wasPaused;
+global doPause;
+global doStop;
+display('btn_stop: pushed');
+display(wasPaused);
+doStop=1;
+set_values('stop',handles);
 main(-1);
-set(handles.ind_sim,'string','OFF');
-set(handles.ind_status,'string','IDLE');
-% enable inputs
-set(handles.val_centerx,'Enable','on');
-set(handles.val_centery,'Enable','on');
-set(handles.val_diameter,'Enable','on');
-set(handles.val_loops,'Enable','on');
-set(handles.val_delay,'Enable','on');
-set(handles.val_read,'Enable','on');
-set(handles.val_tot_acc,'Enable','on');
-set(handles.val_scale,'Enable','on');
+set_values('idle',handles);
+wasPaused=0;
+doPause=0;
+set(handles.ind_error,'string','System is stopped, check the Acknowledge box before running again');
+set(handles.btn_ack,'value',0);
+set(handles.btn_ack,'visible','on');
 
-set(handles.btn_on,'Enable','on');
-set(handles.btn_pause,'Enable','off');
-set(handles.btn_pause,'String','Pause');
-
-% --- Executes on button press in btn_pause.
+%% pressed btn_pause.
 function btn_pause_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_pause (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global doPause;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the button 'pause' is pressed. This function
+% is enabled when the system is running and will allow the user to pause
+% the system, change the parameters and re-run the system. Or only pause
+% and later continue the system.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+global doPause;
+global wasPaused;
 switch doPause
     case 0 % pause
         % enable inputs
-        set(handles.val_centerx,'Enable','on');
-        set(handles.val_centery,'Enable','on');
-        set(handles.val_diameter,'Enable','on');
-        set(handles.val_loops,'Enable','on');
-        set(handles.val_delay,'Enable','on');
-        set(handles.val_read,'Enable','on');
-        set(handles.val_tot_acc,'Enable','on');
-        set(handles.val_scale,'Enable','on');
-        set(handles.btn_on,'Enable','off');
-        set(handles.btn_pause,'Enable','on');
+        wasPaused=wasPaused+1;
+        display('btn_pause: pause');
+        set_values('pause',handles);
         set(handles.btn_pause,'String','Unpause');
         doPause=1;
     case 1 % Unpause
+        display('btn_pause: unpause');
         % disable inputs
-        set(handles.val_centerx,'Enable','off');
-        set(handles.val_centery,'Enable','off');
-        set(handles.val_diameter,'Enable','off');
-        set(handles.val_loops,'Enable','off');
-        set(handles.val_delay,'Enable','off');
-        set(handles.val_read,'Enable','off');
-        set(handles.val_tot_acc,'Enable','off');
-        set(handles.val_scale,'Enable','off');
-        set(handles.btn_pause,'enable','on');
+        set_values('run',handles);
         set(handles.btn_pause,'String','Pause');
-        set(handles.ind_status,'String','RUNNING');
         doPause=2;
+        btn_on_Callback(findobj('tag','btn_on'),eventdata,handles);
+%         main(2);
     otherwise % unknown
-        % enable inputs
-        set(handles.val_centerx,'Enable','on');
-        set(handles.val_centery,'Enable','on');
-        set(handles.val_diameter,'Enable','on');
-        set(handles.val_loops,'Enable','on');
-        set(handles.val_delay,'Enable','on');
-        set(handles.val_read,'Enable','on');
-        set(handles.val_tot_acc,'Enable','on');
-        set(handles.val_scale,'Enable','on');
-        set(handles.btn_on,'Enable','off');
-        set(handles.btn_pause,'Enable','on');
-        set(handles.btn_pause,'String','Pause');
+        display('btn_pause: unknown');
+        set_values('run',handles);
         doPause=0;
 end
 
-% --- Executes on button press in btn_save.
+%% pressed btn_save
 function btn_save_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_save (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set(handles.ind_status,'String','SAVING...');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the button 'save' is pressed. This will pop-up
+% a save menu to select where to save it to and in which format. It is
+% possible to save as an Excel file or as text file (CSV-format). When
+% other formats are used is this function aborted, this also happens when
+% the save menu is cancelled. In both cases is an error message displayed.
+% The Excel file consist of a summary tab, tab with the all data, tab with
+% all move parts and tabs for all the cycles. 
+% The summary tab consisit of the parameters and the results as shown in
+% the GUI itself. The 'ALL' tab consisit of data for the cycle and loop
+% number, the x/y coordinates and the max power with coordinates.
+% The move tab is similar to the ALL tab, but is the loop number skipped.
+% The cycle tabs are also similar to the ALL tab, but is the cycle number
+% skipped.
+% For the CSV files is a new file with '_param' at the end created which
+% contains the parameters and results (same as the summary tab in Excel)
+% the normal csv-file is similar to the all tab in Excel.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% set(handles.val_status,'String','SAVE');
+set_values('save',handles);
 % get appdata
 if ~isappdata(0,'acc')||~isappdata(0,'centerx')||~isappdata(0,'centery')||~isappdata(0,'cyclenr')||...
         ~isappdata(0,'delay')||~isappdata(0,'diameter')||~isappdata(0,'loopnr')||~isappdata(0,'p_data')||...
         ~isappdata(0,'pmax')||~isappdata(0,'read_time')||~isappdata(0,'scale')||~isappdata(0,'t_data')||...
         ~isappdata(0,'tot_acc')||~isappdata(0,'x_data')||~isappdata(0,'xmax')||~isappdata(0,'y_data')||~isappdata(0,'ymax')
     % error loading
-    set(handles.ind_error,'String','ERROR: Some data is unavailable!');
-    set(handles.ind_status,'String','IDLE');
+    set(handles.ind_error,'String','Error: Some data is unavailable!');
+    set_values('idle',handles);
     return;
 end
 
 power_temp=getappdata(0,'p_data');
-% centerx_temp=getappdata(0,'centerx');
-% centery_temp=getappdata(0,'centery');
-% diameter_temp=getappdata(0,'diameter');
 loop_nr_temp=getappdata(0,'loopnr');
 cycle_nr_temp=getappdata(0,'cyclenr');
-% scale_temp=getappdata(0,'scale');
-% delay_temp=getappdata(0,'delay');
-% tRead_temp=getappdata(0,'read_time');
-% acc_temp=getappdata(0,'acc');
-% tot_acc_temp=getappdata(0,'tot_acc');
 xpos_temp=getappdata(0,'x_data');
 ypos_temp=getappdata(0,'y_data');
 time_temp=getappdata(0,'t_data');
@@ -640,7 +755,7 @@ end
     ,'Save location','Alignment_Data.xlsx');
 if isequal(filename,0)||isequal(pathname,0)
     % save canceled
-    set(handles.ind_status,'String','IDLE');
+    set_values('idle',handles);
     return;
 end
 
@@ -693,13 +808,13 @@ switch lower(fext) % make sure extension is all lower case
         % Create PARAMETER file
         summary={...
             'PARAMETERS';...
-            strcat('Center',centerx,'um',centery,'um');...
-            strcat('Diameter',diameter,'um');...
+            strcat('Center',num2str(centerx),'um',num2str(centery),'um');...
+            strcat('Diameter',num2str(diameter),'um');...
             strcat('Loops',num2str(max(loop_nr)));...
-            strcat('Scale',scale,'X');...
-            strcat('Delay time',delay,'samples');...
-            strcat('Read time',tRead,'samples');...
-            strcat('Accuracy',acc,'nm / ',tot_acc,'nm');...
+            strcat('Scale',num2str(scale),'X');...
+            strcat('Delay time',num2str(delay),'samples');...
+            strcat('Read time',num2str(tRead),'samples');...
+            strcat('Accuracy',num2str(acc),'nm / ',num2str(tot_acc),'nm');...
             'RESULTS';...
             'Frequency: 800 Hz, 125 ms';...
             strcat('Range X',num2str(round(min(xpos)*1000)/1000),'um',num2str(round(max(xpos)*1000)/1000),'um');...
@@ -717,41 +832,70 @@ switch lower(fext) % make sure extension is all lower case
         writetable(data_table,save_loc,'WriteVariableNames',1);
     otherwise
         % cancel save
-        set(handles.ind_error,'String','ERROR: Unable to save as specified format!');
+        set(handles.ind_error,'String','Error: Unable to save as specified format!');
 end
-set(handles.ind_status,'String','IDLE');
+set_values('idle',handles);
 set(handles.ind_error,'String',strcat('Saved as: ',fname,fext));
 beep;
 
-% --- Executes on button press in btn_debug.
+%% pressed btn_debug.
 function btn_debug_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_debug (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
 % Hint: get(hObject,'Value') returns toggle state of btn_debug
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the button 'debug' is checked or unchecked. By
+% default is the system set to the external mode, the user can choose to
+% set it to debug mode. This way is the Arduino disconnected from the
+% system and is the runtime a lot quicker, ideal for testing.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 if get(hObject,'Value')==1
     % run simulink in debug mode
     set_param('Autoalign_system','SimulationMode','normal');
-    set(handles.ind_status,'String','DEBUG');
+    set_values('debug',handles);
 else
     % run simulink in external mode
     set_param('Autoalign_system','SimulationMode','external');
-    set(handles.ind_status,'String','EXTERNAL');
+    set_values('external',handles);
 end
 
-% --- Executes on button press in btn_reset.
+%% Pressed btn_reset
 function btn_reset_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_reset (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set(handles.ind_status,'String','RESET?');
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the button 'reset' is pressed. This will
+% pop-up a window which asks for confirmation of resetting the system. The
+% reset will only re-initialize the GUI, not the simulation!
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+display('RESET');
+set(handles.val_status,'String','RESET?');
 reset=questdlg('Do you really want to reset the interface?!','Reset','Cancel','Reset','Cancel');
 if strcmp(reset,'Cancel')
     return
 end
+beep;
 UserInterface_OpeningFcn(findobj('Tag','fig_GUI'),eventdata,handles);
+% --- Executes on button press in btn_ack.
+function btn_ack_Callback(hObject, eventdata, handles)
+% hObject    handle to btn_ack (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
 
+% Hint: get(hObject,'Value') returns toggle state of btn_ack
+global doStop;
+ack=get(hObject,'Value');
+if ack==1
+    % cleared stop --> continue
+    doStop=0;
+end
 %% SETTING VALUES
 function val_centerx_Callback(hObject, eventdata, handles)
 % hObject    handle to val_centerx (see GCBO)
@@ -760,21 +904,30 @@ function val_centerx_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of val_centerx as text
 %        str2double(get(hObject,'String')) returns contents of val_centerx as a double
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the value for 'center X' is changed. First is
+% checked whether the value is valid, then is the time re-calculated. The
+% center value is used to define the offset at which the system need to
+% start. [default value is 0um]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 global inputerr;
 val=get(hObject,'String');
 check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'i')||contains(val,'j')...
         ||isempty(val)||isnan(check)||check>10000||check<-10000
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.ind_error,'String','Invalid value, -10.000 < CenterX < 10.000');
+    set(handles.ind_error,'String','Error: Invalid value, -10.000 < CenterX < 10.000');
     inputerr(1,1)=1;
 else
     inputerr(1,1)=0;
     setappdata(0,'centerx',check); % Update value in appdata
     % update time
     [time_min,time_sec]=calcTime();
-    set(handles.ind_est_min,'String',num2str(time_min));
-    set(handles.ind_est_sec,'String',num2str(time_sec));
+    time=strcat(num2str(time_min,'%02i'),':',num2str(time_sec,'%02i'));
+    set(handles.val_time_est,'String',time);
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -787,21 +940,30 @@ function val_centery_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of val_centery as text
 %        str2double(get(hObject,'String')) returns contents of val_centery as a double
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the value for 'center Y' is changed. First is
+% checked whether the value is valid, then is the time re-calculated. The
+% center value is used to define the offset at which the system need to
+% start. [default value is 0um]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 global inputerr;
 val=get(hObject,'String');
 check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'i')||contains(val,'j')...
         ||isempty(val)||isnan(check)||check>10000||check<-10000
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.ind_error,'String','Invalid value, -10.000 < CenterY < 10.000');
+    set(handles.ind_error,'String','Error: Invalid value, -10.000 < CenterY < 10.000');
     inputerr(2,1)=1;
 else
     inputerr(2,1)=0;
     setappdata(0,'centery',check); % Update value in appdata
     % update time
     [time_min,time_sec]=calcTime();
-    set(handles.ind_est_min,'String',num2str(time_min));
-    set(handles.ind_est_sec,'String',num2str(time_sec));
+    time=strcat(num2str(time_min,'%02i'),':',num2str(time_sec,'%02i'));
+    set(handles.val_time_est,'String',time);
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -814,13 +976,22 @@ function val_diameter_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of val_diameter as text
 %        str2double(get(hObject,'String')) returns contents of val_diameter as a double
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the value for 'Diameter' is changed. First is
+% checked whether the value is valid, then are the time, cycles and accuracy
+% re-calculated. The Diameter is used to define the total area in which the
+% search will take place. [default value is 20um]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 global inputerr;
 val=get(hObject,'String');
 check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'i')||contains(val,'j')...
         ||contains(val,'-')||isempty(val)||isnan(check)||check>10000||check<1
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.ind_error,'String','Invalid value, 1 < Diameter < 10.000');
+    set(handles.ind_error,'String','Error: Invalid value, 1 < Diameter < 10.000');
     inputerr(3,1)=1;
 else
     inputerr(3,1)=0;
@@ -836,12 +1007,12 @@ else
     setappdata(0,'acc',acc);
     % update time
     [time_min,time_sec]=calcTime();
+    time=strcat(num2str(time_min,'%02i'),':',num2str(time_sec,'%02i'));
     % show values
     set(handles.val_diameter,'String',num2str(check));
-    set(handles.int_cyclecnt,'String',num2str(cycles));
-    set(handles.ind_acc,'String',num2str(acc));
-    set(handles.ind_est_min,'String',num2str(time_min));
-    set(handles.ind_est_sec,'String',num2str(time_sec));
+    set(handles.val_acc,'String',strcat(num2str(acc),' nm'));
+    set(handles.val_cycle,'String',num2str(cycles));
+    set(handles.val_time_est,'String',time);
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -854,13 +1025,22 @@ function val_loops_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of val_loops as text
 %        str2double(get(hObject,'String')) returns contents of val_loops as a double
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the value for 'Loops' is changed. First is
+% checked whether the value is valid, then are the time, cycles and accuracy
+% re-calculated. The number of loops is used to minimize the number of
+% cycles and to increase the overall accuracy. [default value is 3 loops]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 global inputerr;
 val=get(hObject,'String');
 check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
         ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>50||check<1
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.ind_error,'String','Invalid value, 1 < Loops < 50');
+    set(handles.ind_error,'String','Error: Invalid value, 1 < Loops < 50');
     inputerr(4,1)=1;
 else
     inputerr(4,1)=0;
@@ -876,12 +1056,12 @@ else
     setappdata(0,'acc',acc);
     % update time
     [time_min,time_sec]=calcTime();
+    time=strcat(num2str(time_min,'%02i'),':',num2str(time_sec,'%02i'));
     % show values
     set(handles.val_loops,'String',num2str(check));
-    set(handles.int_cyclecnt,'String',num2str(cycles));
-    set(handles.ind_acc,'String',num2str(acc));
-    set(handles.ind_est_min,'String',num2str(time_min));
-    set(handles.ind_est_sec,'String',num2str(time_sec));
+    set(handles.val_acc,'String',strcat(num2str(acc),' nm'));
+    set(handles.val_cycle,'String',num2str(cycles));
+    set(handles.val_time_est,'String',time);
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -894,13 +1074,22 @@ function val_tot_acc_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of val_tot_acc as text
 %        str2double(get(hObject,'String')) returns contents of val_tot_acc as a double
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the value for 'Total Accuracy' is changed. First is
+% checked whether the value is valid, then are the time, cycles and accuracy
+% re-calculated. The total accuracy is used to determine what the maximum
+% allowed deviation between loops is. [default value is 500nm]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 global inputerr;
 val=get(hObject,'String');
 check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
         ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>100000||check<1
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.ind_error,'String','Invalid value, 1 < Total accuracy < 100000');
+    set(handles.ind_error,'String','Error: Invalid value, 1 < Total accuracy < 100000');
     inputerr(5,1)=1;
 else
     inputerr(5,1)=0;
@@ -916,12 +1105,12 @@ else
     setappdata(0,'acc',acc);
     % update time
     [time_min,time_sec]=calcTime();
+    time=strcat(num2str(time_min,'%02i'),':',num2str(time_sec,'%02i'));
     % show values
     set(handles.val_tot_acc,'String',num2str(check));
-    set(handles.int_cyclecnt,'String',num2str(cycles));
-    set(handles.ind_acc,'String',num2str(acc));
-    set(handles.ind_est_min,'String',num2str(time_min));
-    set(handles.ind_est_sec,'String',num2str(time_sec));
+    set(handles.val_acc,'String',strcat(num2str(acc),' nm'));
+    set(handles.val_cycle,'String',num2str(cycles));
+    set(handles.val_time_est,'String',time);
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -934,13 +1123,22 @@ function val_scale_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of val_scale as text
 %        str2double(get(hObject,'String')) returns contents of val_scale as a double
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the value for 'Scale' is changed. First is
+% checked whether the value is valid, then are the time, cycles and accuracy
+% re-calculated. The scale factor is used to define how much smaller the
+% diameter decreased per cycle. [default value is 2x]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 global inputerr;
 val=get(hObject,'String');
 check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
         ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>20||check<=1
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.ind_error,'String','Invalid value, 1 <= Scale < 20');
+    set(handles.ind_error,'String','Error: Invalid value, 1 <= Scale < 20');
     inputerr(6,1)=1;
 else
     inputerr(6,1)=0;
@@ -956,12 +1154,12 @@ else
     setappdata(0,'acc',acc);
     % update time
     [time_min,time_sec]=calcTime();
+    time=strcat(num2str(time_min,'%02i'),':',num2str(time_sec,'%02i'));
     % show values
     set(handles.val_scale,'String',num2str(check));
-    set(handles.int_cyclecnt,'String',num2str(cycles));
-    set(handles.ind_acc,'String',num2str(acc));
-    set(handles.ind_est_min,'String',num2str(time_min));
-    set(handles.ind_est_sec,'String',num2str(time_sec));
+    set(handles.val_acc,'String',strcat(num2str(acc),' nm'));
+    set(handles.val_cycle,'String',num2str(cycles));
+    set(handles.val_time_est,'String',time);
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -974,21 +1172,30 @@ function val_delay_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of val_delay as text
 %        str2double(get(hObject,'String')) returns contents of val_delay as a double
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the value for 'Delay' is changed. First is
+% checked whether the value is valid, then is the time re-calculated. The
+% delay value is used to determine the interval between two readings
+% [default value is 16 samples]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 global inputerr;
 val=get(hObject,'String');
 check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
         ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>1000||check<1
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.ind_error,'String','Invalid value, 1 < Delay < 1000');
+    set(handles.ind_error,'String','Error: Invalid value, 1 < Delay < 1000');
     inputerr(7,1)=1;
 else
     inputerr(7,1)=0;
     setappdata(0,'delay',check); % Update value in appdata
     % update time
     [time_min,time_sec]=calcTime();
-    set(handles.ind_est_min,'String',num2str(time_min));
-    set(handles.ind_est_sec,'String',num2str(time_sec));
+    time=strcat(num2str(time_min,'%02i'),':',num2str(time_sec,'%02i'));
+    set(handles.val_time_exp,'String',time);
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
@@ -1001,26 +1208,112 @@ function val_read_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'String') returns contents of val_read as text
 %        str2double(get(hObject,'String')) returns contents of val_read as a double
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the value for 'Read' is changed. First is
+% checked whether the value is valid, then is the time re-calculated. The
+% read value is used to set the number of samples required to read the
+% power. [default value is 1 sample]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 global inputerr;
 val=get(hObject,'String');
 check=str2double(val);
 if contains(val,' ')||contains(val,',')||contains(val,'.')||contains(val,'i')...
         ||contains(val,'j')||contains(val,'-')||isempty(val)||isnan(check)||check>1000||check<1
     set(hObject,'BackgroundColor',[1 0 0]);% red
-    set(handles.ind_error,'String','Invalid value, 1 < Read time < 1000');
+    set(handles.ind_error,'String','Error: Invalid value, 1 < Read time < 1000');
     inputerr(8,1)=1;
 else
     inputerr(8,1)=0;
     setappdata(0,'read_time',check); % Update value in appdata
     % update time
     [time_min,time_sec]=calcTime();
-    set(handles.ind_est_min,'String',num2str(time_min));
-    set(handles.ind_est_sec,'String',num2str(time_sec));
+    time=strcat(num2str(time_min,'%02i'),':',num2str(time_sec,'%02i'));
+    set(handles.val_time_exp,'String',time);
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
     set(hObject,'backgroundColor',[1 1 1]);% white
 end
+function val_pSet_Callback(hObject, eventdata, handles)
+% hObject    handle to val_pSet (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of val_pSet as text
+%        str2double(get(hObject,'String')) returns contents of val_pSet as a double
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the value for 'Max power' is changed. This
+% function is used to test the accuracy of the system.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+val=get(hObject,'String');
+check=str2double(val);
+setappdata(0,'p_set',check); % Update value in appdata
+% flash green
+set(hObject,'backgroundColor',[0 .5 0]);% green
+pause(.05);
+set(hObject,'backgroundColor',[1 1 1]);% white
+function val_pxSet_Callback(hObject, eventdata, handles)
+% hObject    handle to val_pxSet (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of val_pxSet as text
+%        str2double(get(hObject,'String')) returns contents of val_pxSet as a double
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the value for 'Location X' is changed. This
+% function is used to test the accuracy of the system.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+val=get(hObject,'String');
+check=str2double(val);
+setappdata(0,'px_set',check); % Update value in appdata
+% flash green
+set(hObject,'backgroundColor',[0 .5 0]);% green
+pause(.05);
+set(hObject,'backgroundColor',[1 1 1]);% white
+function val_pySet_Callback(hObject, eventdata, handles)
+% hObject    handle to val_pySet (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of val_pySet as text
+%        str2double(get(hObject,'String')) returns contents of val_pySet as a double
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% This callback is used when the value for 'Location Y' is changed. This
+% function is used to test the accuracy of the system.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+val=get(hObject,'String');
+check=str2double(val);
+setappdata(0,'py_set',check); % Update value in appdata
+% flash green
+set(hObject,'backgroundColor',[0 .5 0]);% green
+pause(.05);
+set(hObject,'backgroundColor',[1 1 1]);% white
+function val_pfactor_Callback(hObject, eventdata, handles)
+% hObject    handle to val_pfactor (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of val_pfactor as text
+%        str2double(get(hObject,'String')) returns contents of val_pfactor as a double
+val=get(hObject,'String');
+check=str2double(val);
+setappdata(0,'pfactor_set',check); % Update value in appdata
+% flash green
+set(hObject,'backgroundColor',[0 .5 0]);% green
+pause(.05);
+set(hObject,'backgroundColor',[1 1 1]);% white
 
 %% SHOWING VALUES
 function val_sample_Callback(hObject, eventdata, handles)
@@ -1114,11 +1407,11 @@ function val_Ptmax_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of val_Ptmax as text
 %        str2double(get(hObject,'String')) returns contents of val_Ptmax as a double
 function val_T_est_m_Callback(hObject, eventdata, handles)
-% hObject    handle to ind_est_min (see GCBO)
+% hObject    handle to ind_est_time (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'String') returns contents of ind_est_min as text
-%        str2double(get(hObject,'String')) returns contents of ind_est_min as a double
+% Hints: get(hObject,'String') returns contents of ind_est_time as text
+%        str2double(get(hObject,'String')) returns contents of ind_est_time as a double
 function val_T_est_s_Callback(hObject, eventdata, handles)
 % hObject    handle to ind_est_sec (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -1126,11 +1419,11 @@ function val_T_est_s_Callback(hObject, eventdata, handles)
 % Hints: get(hObject,'String') returns contents of ind_est_sec as text
 %        str2double(get(hObject,'String')) returns contents of ind_est_sec as a double
 function val_time_m_Callback(hObject, eventdata, handles)
-% hObject    handle to ind_exp_min (see GCBO)
+% hObject    handle to ind_exp_time (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% Hints: get(hObject,'String') returns contents of ind_exp_min as text
-%        str2double(get(hObject,'String')) returns contents of ind_exp_min as a double
+% Hints: get(hObject,'String') returns contents of ind_exp_time as text
+%        str2double(get(hObject,'String')) returns contents of ind_exp_time as a double
 function val_time_s_Callback(hObject, eventdata, handles)
 % hObject    handle to ind_exp_sec (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -1411,8 +1704,8 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 % --- Executes during object creation, after setting all properties.
-function ind_est_min_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to ind_est_min (see GCBO)
+function ind_est_time_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ind_est_time (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1433,8 +1726,8 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 % --- Executes during object creation, after setting all properties.
-function ind_exp_min_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to ind_exp_min (see GCBO)
+function ind_exp_time_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to ind_exp_time (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -1487,5 +1780,48 @@ function ind_Pprec_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+% --- Executes during object creation, after setting all properties.
+function val_pSet_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to val_pSet (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
 
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+% --- Executes during object creation, after setting all properties.
+function val_pxSet_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to val_pxSet (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+% --- Executes during object creation, after setting all properties.
+function val_pySet_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to val_pySet (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+% --- Executes during object creation, after setting all properties.
+function val_pfactor_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to val_pfactor (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 %% END USERINTERFACE
