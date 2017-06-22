@@ -1,4 +1,13 @@
 function main(state)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Description:
+% The Main function is called to communicate with Matlab Simulink
+% (Autoalgn_system.slx/.mdl). Sets constant values in Model to the correct
+% value and starts, pauses and stops the simulation if needed. The input
+% 'state' is used to determine what need to be done (as explained in the
+% comments on the switch). The while loop is active as long as the
+% simulation is running
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global counter;
 global changes;
 global doPause;
@@ -67,10 +76,8 @@ switch state
     case -1 % stop
         if doPause>0
             % simulink paused, order stop with command
-            display('main: stop while paused');
             set_param('Autoalign_system','SimulationCommand','stop');
         else
-            display('main: stop normally');
             % simulink running, order stop in simulink
             set_param(mode_obj{1},'Value','-1'); % simulink -> stop
         end
@@ -92,23 +99,19 @@ switch state
         return;
     case 1 % Run
         set_param(mode_obj{1},'Value','1');
-        display('main: run (cnt=0)');
         counter=0; % reset counter
     case 2 % unpause
-        display('main: state 2 (cnt unchanged)');
         set_param(mode_obj{1},'Value','1');
         set_param('Autoalign_system','SimulationCommand','continue');
     otherwise
         % do nothing
 end
 if doPause==2 % unpause
-    display('main: doPause 2: Unpause');
     set_param(mode_obj{1},'Value','1'); % simulink -> run
     if centerx==centerx_sim && centery==centery_sim &&...
             diameter==diameter_sim && loops==loops_sim &&...
             cycles==cycles_sim && delay==delay_sim && read_time==read_time_sim
         % no changes, continue
-        display('main: doPause 2: continue (cnt unchanged)');
         set_param('Autoalign_system','SimulationCommand','continue');
         changes=0;
     else
@@ -116,7 +119,6 @@ if doPause==2 % unpause
         counter=0;
         changes=1;
         wasPaused=0;
-        display('main: doPause 2: restart (cnt=0)');
         set_param('Autoalign_system','SimulationCommand','stop');
         % update values
         centerx_sim =centerx;
@@ -135,11 +137,9 @@ if doPause==2 % unpause
 end
 while strcmp(get_param('Autoalign_system','SimulationStatus'),'stopped')==0
     if doPause==1 % pause
-        display('main: while, doPause=1');
         set_param('Autoalign_system','SimulationCommand','pause');
         break
     elseif doPause==2
-        display('main: while, doPause=2, (cnt=unchanged');
         break;
     elseif counter>cnt_time
         break;
@@ -156,7 +156,6 @@ if state==3
     if centerx~=centerx_sim || centery~=centery_sim ||...
             diameter~=diameter_sim || loops~=loops_sim ||...
             cycles~=cycles_sim || delay~=delay_sim || read_time~=read_time_sim
-        display('main: state=3');
         main(0);
     end
 end

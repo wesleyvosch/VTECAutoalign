@@ -266,7 +266,6 @@ function set_values(status, handles)
 % And depends on the status of the simulation. It uses the handles from the
 % callback to write to the correct items.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-display(strcat('set_values: status=',status));
 switch status
     case 'BUILDING'
         % enable/disable buttons
@@ -478,8 +477,8 @@ if doPause==0 && wasPaused==0 && doStop==0
     set(handles.val_time_est,'String',time);
     
     % run simulation
-    set(handles.val_sim,'String','ON');
-    set_values('RUNNING',handles);
+%     set(handles.val_sim,'String','ON');
+%     set_values('RUNNING',handles);
     set(handles.val_time_exp,'String','00:00');
     main(0); % build sim
     beep;
@@ -487,18 +486,14 @@ end
 
 switch doPause
     case 1 % paused mode, 
-        display('btn_on: pause');
         set_values('PAUSED',handles);
         main(3); % Sim paused, waiting
-        display('btn_on: pause2');
     case 2 % unpaused mode
-        display('btn_on: continue');
         set_values('RUNNING',handles);
         main(2); % continue sim
         btn_on_Callback(hObject, eventdata, handles);
     otherwise % normal mode
         if wasPaused==0
-            display('btn_on: normal');
             set_values('RUNNING',handles);
             main(1); % run sim
             if doPause>0
@@ -508,7 +503,6 @@ switch doPause
                 set_values('FINISHED',handles);
             end
         else
-           display('btn_on: was paused');
            set_values('FINISHED',handles);
            wasPaused=0;
         end
@@ -522,7 +516,6 @@ if ~isappdata(0,'x_data')||~isappdata(0,'y_data')||...
     set(handles.ind_error,'string','Error: Unable to receive stored data!');
     return;
 end
-display('get');
 % get appdata
 time_t=getappdata(0,'t_data');
 power_t=getappdata(0,'p_data');
@@ -597,10 +590,8 @@ set(handles.val_sweetx_prec,'String',strcat(num2str(round((max(max_x)-min(max_x)
 set(handles.val_sweety_prec,'String',strcat(num2str(round((max(max_y)-min(max_y))*100)/100),' nm'));
 
 if wasPaused==0
-    display('btn_on: end, was paused');
     set_values('IDLE',handles);
 else
-    display('btn_on: end, was not paused');
     m=floor(counter/600);
     s=floor(counter/10-m*60);
     t=strcat(num2str(m,'%02i'),':',num2str(s,'%02i'));
@@ -623,8 +614,6 @@ function btn_stop_Callback(hObject, eventdata, handles)
 global wasPaused;
 global doPause;
 global doStop;
-display('btn_stop: pushed');
-display(wasPaused);
 doStop=1;
 set_values('STOPPED',handles);
 main(-1);
@@ -655,12 +644,10 @@ switch doPause
     case 0 % pause
         % enable inputs
         wasPaused=wasPaused+1;
-        display('btn_pause: pause');
         set_values('PAUSED',handles);
         set(handles.btn_pause,'String','Unpause');
         doPause=1;
     case 1 % Unpause
-        display('btn_pause: unpause');
         % disable inputs
         set_values('RUNNING',handles);
         set(handles.btn_pause,'String','Pause');
@@ -668,7 +655,6 @@ switch doPause
         btn_on_Callback(findobj('tag','btn_on'),eventdata,handles);
 %         main(2);
     otherwise % unknown
-        display('btn_pause: unknown');
         set_values('RUNNING',handles);
         doPause=0;
 end
@@ -764,24 +750,94 @@ end
 save_loc=fullfile(pathname,[fname,fext]);
 switch lower(fext) % make sure extension is all lower case
     case {'.xlsx','.xls'}
+        centerx_str=strcat(num2str(floor(centerx)),',',num2str(floor((centerx-floor(centerx))*1000)));
+        centery_str=strcat(num2str(floor(centery)),',',num2str(floor((centery-floor(centery))*1000)));
+        diameter_str=strcat(num2str(floor(diameter)),',',num2str(floor((diameter-floor(diameter))*1000)));
+        loops_str=strcat(num2str(floor(max(loop_nr))),',',num2str(floor((max(loop_nr)-floor(max(loop_nr)))*1000)));
+        cycles_str=strcat(num2str(floor(max(cycle_nr))),',',num2str(floor((max(cycle_nr)-floor(max(cycle_nr)))*1000)));
+        scale_str=strcat(num2str(floor(scale)),',',num2str(floor((scale-floor(scale))*1000)));
+        delay_str=strcat(num2str(floor(delay)),',',num2str(floor((delay-floor(delay))*1000)));
+        read_str=strcat(num2str(floor(tRead)),',',num2str(floor((tRead-floor(tRead))*1000)));
+        acc_str=strcat(num2str(floor(acc)),',',num2str(floor((acc-floor(acc))*1000)));
+        totacc_str=strcat(num2str(floor(tot_acc)),',',num2str(floor((tot_acc-floor(tot_acc))*1000)));
+        posxmin=round(min(xpos)*1000)/1000;
+        posxmax=round(max(xpos)*1000)/1000;
+        posymin=round(min(ypos)*1000)/1000;
+        posymax=round(max(ypos)*1000)/1000;
+        if posxmin<0
+            xmin_str=strcat(num2str(ceil(posxmin)),',',num2str(ceil((abs(posxmin-ceil(posxmin))*1000))));
+        else
+            xmin_str=strcat(num2str(floor(posxmin)),',',num2str(floor((posxmin-floor(posxmin))*1000)));
+        end
+        if posxmax<0
+            xmax_str=strcat(num2str(ceil(posxmax)),',',num2str(ceil((abs(posxmax-ceil(posxmax))*1000))));
+        else
+            xmax_str=strcat(num2str(floor(posxmax)),',',num2str(floor((posxmax-floor(posxmax))*1000)));
+        end
+        if posymin<0
+            ymin_str=strcat(num2str(ceil(posymin)),',',num2str(ceil((abs(posymin-ceil(posymin))*1000))));
+        else
+            ymin_str=strcat(num2str(floor(posymin)),',',num2str(floor((posymin-floor(posymin))*1000)));
+        end
+        if posymax<0
+            ymax_str=strcat(num2str(ceil(posymax)),',',num2str(ceil((abs(posymax-ceil(posymax))*1000))));
+        else
+            ymax_str=strcat(num2str(floor(posymax)),',',num2str(floor((posymax-floor(posymax))*1000)));
+        end
+        tmin=floor(max(time)/60);
+        tsec=ceil(max(time)-tmin*60);
+        min_str=strcat(num2str(floor(tmin)),',',num2str(floor((tmin-floor(tmin))*1000)));
+        sec_str=strcat(num2str(floor(tsec)),',',num2str(floor((tsec-floor(tsec))*1000)));
+        pmax=round(max_p(end)*1000/1000);
+        pmax_p=round((max(max_p)-min(max_p))*1000000)/1000;
+        pmax_str=strcat(num2str(floor(pmax)),',',num2str(floor((pmax-floor(pmax))*1000)));
+        pmax_p_str=strcat(num2str(floor(pmax_p)),',',num2str(floor((pmax_p-floor(pmax_p))*1000)));
+        pxmax=round(max_x(end)*1000/1000);
+        pxmax_p=round((max(max_x)-min(max_x))*1000000)/1000;
+        pxmax_str=strcat(num2str(floor(pxmax)),',',num2str(floor((pxmax-floor(pxmax))*1000)));
+        pxmax_p_str=strcat(num2str(floor(pxmax_p)),',',num2str(floor((pxmax_p-floor(pxmax_p))*1000)));
+        pymax=round(max_y(end)*1000/1000);
+        pymax_p=round((max(max_y)-min(max_y))*1000000)/1000;
+        pymax_str=strcat(num2str(floor(pymax)),',',num2str(floor((pymax-floor(pymax))*1000)));
+        pymax_p_str=strcat(num2str(floor(pymax_p)),',',num2str(floor((pymax_p-floor(pymax_p))*1000)));
+        
+        
         % Create SUMMARY tab
         summary={...
             'PARAMETERS','', '','','';...
-            'Center',num2str(centerx),'um',num2str(centery),'um';...
-            'Diameter',num2str(diameter),'um','','';...
-            'Loops',num2str(max(loop_nr)),'','Cycles',num2str(max(cycle_nr));...
-            'Scale',num2str(scale),'X','','';...
-            'Delay time',num2str(delay),'samples','','';...
-            'Read time',num2str(tRead),'samples','','';...
-            'Accuracy',num2str(acc),'nm /',num2str(tot_acc),'nm';...
+            'Center',centerx_str,'um',centery_str,'um';...
+            'Diameter',diameter_str,'um','','';...
+            'Loops',loops_str,'','Cycles',cycles_str;...
+            'Scale',scale_str,'X','','';...
+            'Delay time',delay_str,'samples','','';...
+            'Read time',read_str,'samples','','';...
+            'Accuracy',acc_str,'nm /',totacc_str,'nm';...
             'RESULTS','','','','';...
             'Frequency','800','Hz','125','ms';...
-            'Range X',num2str(round(min(xpos)*1000)/1000),'um',num2str(round(max(xpos)*1000)/1000),'um';...
-            'Range Y',num2str(round(min(ypos)*1000)/1000),'um',num2str(round(max(ypos)*1000)/1000),'um';...
-            'Time',num2str(floor(max(time)/60)),'min',num2str(ceil(max(time)-floor(max(time)/60)*60)),'sec';...
-            'High power',num2str(round(max_p(end)*1000)/1000),'uW ?',num2str(round((max(max_p)-min(max_p))*1000000)/1000),'nW';...
-            'Location X',num2str(round(max_x(end)*1000)/1000),'um ?',num2str(round((max(max_x)-min(max_x))*1000000)/1000),'nm';...
-            'Location Y',num2str(round(max_y(end)*1000)/1000),'um ?',num2str(round((max(max_y)-min(max_y))*1000000)/1000),'nm'};
+            'Range X',xmin_str,'um',xmax_str,'um';...
+            'Range Y',ymin_str,'um',ymax_str,'um';...
+            'Time',min_str,'min',sec_str,'sec';...
+            'High power',pmax_str,'uW ±',pmax_p_str,'nW';...
+            'Location X',pxmax_str,'um ±',pxmax_p_str,'nm';...
+            'Location Y',pymax_str,'um ±',pymax_p_str,'nm'};
+        
+%         summary={...
+%             'PARAMETERS','', '','','';...
+%             'Center',num2str(centerx),'um',num2str(centery),'um';...
+%             'Diameter',num2str(diameter),'um','','';...
+%             'Loops',num2str(max(loop_nr)),'','Cycles',num2str(max(cycle_nr));...
+%             'Scale',num2str(scale),'X','','';...
+%             'Delay time',num2str(delay),'samples','','';...
+%             'Read time',num2str(tRead),'samples','','';...
+%             'Accuracy',num2str(acc),'nm /',num2str(tot_acc),'nm';...
+%             'RESULTS','','','','';...
+%             'Frequency','800','Hz','125','ms';...
+%             'Range X',num2str(round(min(xpos)*1000)/1000),'um',num2str(round(max(xpos)*1000)/1000),'um';...
+%             'Range Y',num2str(round(min(ypos)*1000)/1000),'um',num2str(round(max(ypos)*1000)/1000),'um';...
+%             'Time',num2str(floor(max(time)/60)),'min',num2str(ceil(max(time)-floor(max(time)/60)*60)),'sec';...
+%             'High power',num2str(round(max_p(end)*1000)/1000),'uW ?',num2str(round((max(max_p)-min(max_p))*1000000)/1000),'nW';...
+%             'Location X',num2str(round(max_x(end)*1000)/1000),'um ?',num2str(round((max(max_x)-min(max_x))*1000000)/1000),'nm';...
+%             'Location Y',num2str(round(max_y(end)*1000)/1000),'um ?',num2str(round((max(max_y)-min(max_y))*1000000)/1000),'nm'};
         xlswrite(save_loc,summary,'SUMMARY','A1');
 
         % Create ALL DATA tab
@@ -875,7 +931,6 @@ function btn_reset_Callback(hObject, eventdata, handles)
 % pop-up a window which asks for confirmation of resetting the system. The
 % reset will only re-initialize the GUI, not the simulation!
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-display('RESET');
 set(handles.val_status,'String','RESET?');
 reset=questdlg('Do you really want to reset the interface?!','Reset','Cancel','Reset','Cancel');
 if strcmp(reset,'Cancel')
@@ -1231,7 +1286,7 @@ else
     % update time
     [time_min,time_sec]=calcTime();
     time=strcat(num2str(time_min,'%02i'),':',num2str(time_sec,'%02i'));
-    set(handles.val_time_exp,'String',time);
+    set(handles.val_time_est,'String',time);
     % flash green
     set(hObject,'backgroundColor',[0 .5 0]);% green
     pause(.05);
