@@ -32,16 +32,21 @@ cycles=getappdata(0,'cycles');
 delay=getappdata(0,'delay');
 read=getappdata(0,'read_time');
 
-for L=1:loops
-    tL=tL+(2*L-1)*diameter/(2*loops-1);
+for L=1:loops-1
+    % circumference of loop (incl. piece to new loop)
+    tL=tL+5*((2*L-1)*diameter/(2*loops-1));
 end
+% circumference of loop 
+L=L+1;
+tL=tL+4*((2*L-1)*diameter/(2*loops-1));
+% offset
 tM=abs(centerx)+abs(centery);
 for C=1:cycles
-    tC=tL*scale^(C-1);
-    tM=tM+abs(centerx+0.5*diameter/scale^(C-1))+abs(centery+0.5*diameter/scale^(C-1));
+    tC=tC+tL*scale^(1-C);
+    tM=tM+abs(centerx+0.5*diameter*scale^(1-C))+abs(centery+0.5*diameter*scale^(1-C));
 end
 
 tTot=(tC+tM)/800;
-time=tTot+tTot/delay*read;
+time=tTot*(1+read/delay);
 min=floor(time/60);
 sec=floor(time-min*60);

@@ -75,10 +75,16 @@ guidata(hObject, handles);
 % the parameters to their default values
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-load_system('Autoalign_system.slx'); % load simulink model
-set_param('Autoalign_system','SimulationMode','external'); % set model to external mode
+% load simulink model
+load_system('Autoalign_system.slx');
+set_param('Autoalign_system','SimulationMode','external');
 
-% declare global variables
+% load logo
+logo=imread('VTEC logo.jpg');
+image(handles.logo,logo);
+axis(handles.logo,'off');
+
+% reset global variables
 global doPause;
 global wasPaused;
 global inputerr;
@@ -131,7 +137,7 @@ setappdata(0,'py_set',pyset);
 setappdata(0,'pfactor',pfactor);
 
 cycles=ceil(1+log(1000*diameter/((2*loops-1)*tot_acc))/log(scale));
-acc=round(1000*diameter*scale^(1-cycles)/(2*loops-1));
+acc=round(1000*3*scale^(1-cycles));
 setappdata(0,'cycles',cycles);
 setappdata(0,'acc',acc);
 [tm,ts]=calcTime();
@@ -245,7 +251,7 @@ yyaxis(handles.plt_time,'right');
 ylabel(handles.plt_time,'Power [uW]');
 plot(handles.plt_time,0,0);
 ylim(handles.plt_time,[0 3]);
-legend(handles.plt_time,'X position','Y position','Power','location','northoutside','Orientation','Horizontal');
+legend(handles.plt_time,'X position','Y position','Power','location','northwest','Orientation','Horizontal');
 %% END OF INITIALIZATION
 
 % --- Outputs from this function are returned to the command line.
@@ -578,7 +584,7 @@ ylim(handles.plt_time,[min(power(:,1)) max(power(:,1))]);
 grid(handles.plt_time,'on');
 grid(handles.plt_time,'minor');
 ylabel(handles.plt_time,'Power [uW]');
-legend(handles.plt_time,'X position','Y position','Power','location','northoutside','Orientation','Horizontal');
+legend(handles.plt_time,'X position','Y position','Power','location','northwest','Orientation','Horizontal');
 
 % show position of highest power
 set(handles.val_pmax,'String',strcat(num2str(round(max_p(end,1)*100)/100),' uW'));
@@ -1057,7 +1063,7 @@ else
     setappdata(0,'diameter',check);
     % update cycles + acc
     cycles=ceil(1+log(1000*check/((2*loops-1)*tot_acc))/log(scale));
-    acc=round(1000*check*scale^(1-cycles)/(2*loops-1));
+    acc=round(1000*3*scale^(1-cycles));
     setappdata(0,'cycles',cycles);
     setappdata(0,'acc',acc);
     % update time
@@ -1106,7 +1112,7 @@ else
     setappdata(0,'loops',check);
     % update cycles + acc
     cycles=ceil(1+log(1000*diameter/((2*check-1)*tot_acc))/log(scale));
-    acc=round(1000*diameter*scale^(1-cycles)/(2*check-1));
+    acc=round(1000*3*scale^(1-cycles));
     setappdata(0,'cycles',cycles);
     setappdata(0,'acc',acc);
     % update time
@@ -1155,7 +1161,7 @@ else
     setappdata(0,'tot_acc',check);
     % update cycles + acc
     cycles=ceil(1+log(1000*diameter/((2*loops-1)*check))/log(scale));
-    acc=round(1000*diameter*scale^(1-cycles)/(2*loops-1));
+    acc=round(1000*3*scale^(1-cycles));
     setappdata(0,'cycles',cycles);
     setappdata(0,'acc',acc);
     % update time
@@ -1204,7 +1210,7 @@ else
     setappdata(0,'scale',check);
     % update cycles + acc
     cycles=ceil(1+log(1000*diameter/((2*loops-1)*tot_acc))/log(check));
-    acc=round(1000*diameter*check^(1-cycles)/(2*loops-1));
+    acc=round(1000*3*check^(1-cycles));
     setappdata(0,'cycles',cycles);
     setappdata(0,'acc',acc);
     % update time
